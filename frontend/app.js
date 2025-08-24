@@ -234,11 +234,14 @@ async function loadView(viewName) {
         
         const html = await response.text();
         
-        // Insertar el contenido en el área principal
+    // Insertar el contenido en el área principal
         mainContent.innerHTML = html;
         
         // Ejecutar scripts específicos para cada vista
         executeViewScripts(viewName);
+
+    // Mejorar selects nativos con dropdown custom
+    enhanceAllSelects(mainContent);
         
     } catch (error) {
         console.error('Error:', error);
@@ -282,6 +285,116 @@ function executeViewScripts(viewName) {
         default:
             console.log(`Vista ${viewName} cargada, sin scripts específicos`);
     }
+}
+
+// ============================
+// UI: ENHANCED SELECTS (COMBOBOX)
+// ============================
+
+function enhanceAllSelects(root = document) {
+    // Evitar doble enlace del manejador global para cerrar dropdowns
+    if (!window.__selectEnhancerBound) {
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.select-dropdown.open').forEach(d => {
+                d.classList.remove('open');
+                const t = d.parentElement?.querySelector?.('.select-trigger');
+                if (t) t.setAttribute('aria-expanded', 'false');
+            });
+        });
+        window.__selectEnhancerBound = true;
+    }
+
+    const selects = Array.from(root.querySelectorAll('select.form-select'));
+    selects.forEach(enhanceSelect);
+}
+
+function enhanceSelect(selectEl) {
+    if (!selectEl || selectEl.dataset.enhanced === 'true') return;
+
+    // Crear wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'select-enhanced';
+
+    // Insertar wrapper y mover select dentro
+    const parent = selectEl.parentNode;
+    if (!parent) return;
+    parent.insertBefore(wrapper, selectEl);
+    wrapper.appendChild(selectEl);
+
+    // Trigger visible
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'select-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Seleccionar';
+    wrapper.appendChild(trigger);
+
+    // Dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 'select-dropdown';
+    dropdown.setAttribute('role', 'listbox');
+    wrapper.appendChild(dropdown);
+
+    // Construir opciones desde el select nativo
+    Array.from(selectEl.options).forEach(opt => {
+        const optEl = document.createElement('div');
+        optEl.className = 'select-option';
+        optEl.textContent = opt.text;
+        optEl.setAttribute('data-value', opt.value);
+        if (opt.disabled) optEl.setAttribute('aria-disabled', 'true');
+        if (opt.selected) optEl.setAttribute('aria-selected', 'true');
+        dropdown.appendChild(optEl);
+
+        optEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (opt.disabled) return;
+            // Actualizar nativo
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            // Estado visual
+            dropdown.querySelectorAll('.select-option[aria-selected="true"]').forEach(el => el.removeAttribute('aria-selected'));
+            optEl.setAttribute('aria-selected', 'true');
+            trigger.textContent = opt.text;
+            dropdown.classList.remove('open');
+            trigger.setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    // Toggle dropdown
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('open');
+        // Cerrar otros abiertos
+        document.querySelectorAll('.select-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            const t = d.parentElement?.querySelector?.('.select-trigger');
+            if (t) t.setAttribute('aria-expanded', 'false');
+        });
+        dropdown.classList.toggle('open', !isOpen);
+        trigger.setAttribute('aria-expanded', String(!isOpen));
+    });
+
+    // Sincronizar si cambia el select nativo externamente
+    selectEl.addEventListener('change', () => {
+        const current = selectEl.options[selectEl.selectedIndex];
+        if (current) {
+            trigger.textContent = current.text;
+            dropdown.querySelectorAll('.select-option[aria-selected="true"]').forEach(el => el.removeAttribute('aria-selected'));
+            const match = dropdown.querySelector(`.select-option[data-value="${cssEscape(current.value)}"]`);
+            if (match) match.setAttribute('aria-selected', 'true');
+        }
+    });
+
+    selectEl.dataset.enhanced = 'true';
+}
+
+// Utilidad segura para selector CSS
+function cssEscape(value) {
+    if (window.CSS && typeof window.CSS.escape === 'function') {
+        return window.CSS.escape(value);
+    }
+    return String(value).replace(/([#.;,:*+?^$\[\]{}()|\\/\s])/g, '\\$1');
 }
 
 // ============================
@@ -614,6 +727,7 @@ function initVentaRapidaView() {
     
     let carrito = [];
     let total = 0;
+    const mesaContext = (window.appState && window.appState.currentMesa) ? window.appState.currentMesa : null;
     
     // Elementos del DOM
     const carritoVacio = document.getElementById('carrito-vacio');
@@ -633,6 +747,18 @@ function initVentaRapidaView() {
     const montoRecibido = document.getElementById('monto-recibido');
     const pagoTotal = document.getElementById('pago-total');
     const pagoCambio = document.getElementById('pago-cambio');
+
+    // Mostrar chip de mesa asignada en el header
+    if (mesaContext) {
+        const headerActions = document.querySelector('.venta-rapida-container .page-header .header-actions');
+        if (headerActions && !headerActions.querySelector('.mesa-chip')) {
+            const chip = document.createElement('div');
+            chip.className = 'mesa-chip';
+            const personasTxt = mesaContext.personas ? ` · ${mesaContext.personas} p` : '';
+            chip.innerHTML = `<i class="fas fa-concierge-bell"></i> Mesa ${mesaContext.id} · ${mesaContext.cliente || 'Sin nombre'}${personasTxt}`;
+            headerActions.prepend(chip);
+        }
+    }
     
     // Agregar productos al carrito
     const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
@@ -840,6 +966,12 @@ function initVentaRapidaView() {
             }
             if (modalPago) modalPago.style.display = 'none';
             procesarVenta();
+            // Generar factura y ticket de cocina para impresión
+            try {
+                imprimirFacturaYTicket(carrito, total, mesaContext);
+            } catch (e) {
+                console.error('Error al generar impresión:', e);
+            }
         });
     }
     
@@ -850,6 +982,105 @@ function initVentaRapidaView() {
         carrito = [];
         actualizarCarrito();
     }
+
+        // Construcción e impresión de factura y ticket de cocina
+        function imprimirFacturaYTicket(items, totalVenta, mesaCtx) {
+                const ahora = new Date();
+                const folio = 'FAC-' + ahora.getTime();
+                const negocio = 'Cafetería Sistema';
+                const direccion = 'Calle 123, Ciudad';
+                const tel = 'Tel: 555-123-4567';
+
+                const subtotal = items.reduce((s, it) => s + it.subtotal, 0);
+                const impuestos = subtotal * 0.16;
+
+                // Factura tamaño media carta aprox
+                const mesaMeta = mesaCtx ? `<div class="meta">Mesa ${mesaCtx.id} · ${mesaCtx.cliente || 'Sin nombre'}${mesaCtx.personas ? ' · ' + mesaCtx.personas + ' persona(s)' : ''}</div>` : '';
+                const facturaHtml = `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Factura</title>
+<style>
+    @page { size: A5 portrait; margin: 10mm; }
+    body { font-family: Arial, sans-serif; color:#111827; }
+    h1 { font-size: 16px; margin: 0 0 8px; }
+    .header { text-align:center; margin-bottom: 10px; }
+    .meta { font-size: 12px; color:#555; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    th, td { border-bottom:1px solid #e5e7eb; padding:6px; font-size:12px; text-align:left; }
+    th { background:#f9fafb; }
+    .totales { margin-top:8px; }
+    .totales div { display:flex; justify-content:space-between; font-size:13px; margin-top:4px; }
+    .final { font-weight:700; }
+    .footer { margin-top:10px; text-align:center; font-size:11px; color:#6b7280; }
+    @media print { .no-print { display:none; } }
+    .no-print { margin-top: 10px; }
+    button { padding:6px 10px; }
+</style></head>
+<body>
+    <div class="header">
+        <h1>${negocio}</h1>
+        <div class="meta">${direccion} · ${tel}</div>
+        <div class="meta">Folio: ${folio} · ${ahora.toLocaleString()}</div>
+    ${mesaMeta}
+    </div>
+    <table>
+        <thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead>
+        <tbody>
+            ${items.map(i => `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio.toFixed(2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}
+        </tbody>
+    </table>
+    <div class="totales">
+        <div><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></div>
+        <div><span>Impuestos (16%):</span><span>$${impuestos.toFixed(2)}</span></div>
+        <div class="final"><span>Total:</span><span>$${totalVenta.toFixed(2)}</span></div>
+    </div>
+    <div class="footer">¡Gracias por su compra!</div>
+    <div class="no-print" style="text-align:center"><button onclick="window.print()">Imprimir</button></div>
+</body></html>`;
+
+                // Ticket de cocina (formato angosto)
+                const mesaLinea = mesaCtx ? `<div>Mesa ${mesaCtx.id} · ${mesaCtx.cliente || ''}</div>` : '';
+                const ticketHtml = `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Ticket Cocina</title>
+<style>
+    @page { size: 80mm auto; margin: 5mm; }
+    body { font-family: monospace; font-size: 12px; color:#111; }
+    .hdr { text-align:center; }
+    .line { border-top:1px dashed #000; margin:6px 0; }
+    .item { display:flex; justify-content:space-between; }
+    .strong { font-weight:700; }
+    @media print { .no-print { display:none; } }
+</style></head>
+<body>
+    <div class="hdr">
+        <div class="strong">Ticket Cocina</div>
+        <div>${negocio}</div>
+        <div>${ahora.toLocaleString()}</div>
+    ${mesaLinea}
+    </div>
+    <div class="line"></div>
+    ${items.map(i => `<div class="item"><span>${i.cantidad} x ${i.nombre}</span><span>$${i.subtotal.toFixed(2)}</span></div>`).join('')}
+    <div class="line"></div>
+    <div>Total: $${totalVenta.toFixed(2)}</div>
+    <div class="no-print" style="text-align:center; margin-top:8px"><button onclick="window.print()">Imprimir</button></div>
+</body></html>`;
+
+                abrirVentanaImpresion(facturaHtml, 'Factura');
+                abrirVentanaImpresion(ticketHtml, 'TicketCocina');
+        }
+
+        function abrirVentanaImpresion(html, title) {
+                const win = window.open('', title, 'width=800,height=600');
+                if (!win) return;
+                win.document.open();
+                win.document.write(html);
+                win.document.close();
+                // Intentar imprimir automáticamente cuando cargue
+                win.onload = () => {
+                        try { win.focus(); win.print(); } catch {}
+                };
+        }
     
     // Filtros de categoría
     const categoriaBtns = document.querySelectorAll('.categoria-btn');
@@ -880,6 +1111,27 @@ function initVentaRapidaView() {
     // Búsqueda de productos
     const buscarInput = document.getElementById('buscar-producto-venta');
     if (buscarInput) {
+        // Limpiar texto y placeholder en el primer enfoque/click
+        let clearedBuscarOnce = false;
+        const originalPlaceholder = buscarInput.placeholder;
+        const clearOnFirstFocus = () => {
+            if (!clearedBuscarOnce) {
+                buscarInput.value = '';
+                buscarInput.placeholder = '';
+                clearedBuscarOnce = true;
+                // Refrescar listado para mostrar todos (termino vacío)
+                buscarInput.dispatchEvent(new Event('input'));
+            }
+        };
+        buscarInput.addEventListener('focus', clearOnFirstFocus);
+        buscarInput.addEventListener('click', clearOnFirstFocus);
+        buscarInput.addEventListener('blur', () => {
+            if (buscarInput.value === '') {
+                buscarInput.placeholder = originalPlaceholder;
+            }
+        });
+
+        // Filtrado por texto
         buscarInput.addEventListener('input', (e) => {
             const termino = e.target.value.toLowerCase();
             const productos = document.querySelectorAll('.producto-card');
@@ -914,6 +1166,7 @@ function initMesasView() {
     const formMesa = document.getElementById('form-mesa');
     const formOcupar = document.getElementById('form-ocupar-mesa');
     const formReservar = document.getElementById('form-reservar-mesa');
+    const gridMesas = document.getElementById('grid-mesas');
     
     // Actualizar estadísticas
     function actualizarEstadisticas() {
@@ -978,6 +1231,160 @@ function initMesasView() {
         });
     }
     
+    // ============================
+    // PERSISTENCIA Y REHIDRATACIÓN
+    // ============================
+
+    function getMesasState() {
+        try {
+            return JSON.parse(localStorage.getItem('mesasState') || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function setMesasState(state) {
+        localStorage.setItem('mesasState', JSON.stringify(state));
+    }
+
+    function saveMesaState(mesaId, nuevoEstado, datos = {}) {
+        const state = getMesasState();
+        state[mesaId] = { estado: nuevoEstado, datos };
+        setMesasState(state);
+    }
+
+    function applyMesaState(mesaId, nuevoEstado, datos = {}, options = { navigateOnOcupar: false }) {
+        const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+        if (!mesa) return;
+
+        // Cambiar clases y dataset
+        mesa.classList.remove('disponible', 'ocupada', 'reservada');
+        mesa.classList.add(nuevoEstado);
+        mesa.dataset.estado = nuevoEstado;
+
+        // Indicador de estado
+        const estadoElement = mesa.querySelector('.mesa-estado');
+        if (!estadoElement) return;
+        estadoElement.className = 'mesa-estado';
+
+        if (nuevoEstado === 'disponible') {
+            estadoElement.classList.add('estado-disponible');
+            estadoElement.innerHTML = '<i class="fas fa-check-circle"></i> Disponible';
+            if (mesa.querySelector('.mesa-info')) mesa.querySelector('.mesa-info').remove();
+            mesa.querySelector('.mesa-acciones').innerHTML = `
+                <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
+                    <i class="fas fa-play"></i> Ocupar
+                </button>
+                <button class="btn btn-sm btn-warning btn-reservar" data-id="${mesaId}">
+                    <i class="fas fa-calendar"></i> Reservar
+                </button>
+            `;
+        } else if (nuevoEstado === 'ocupada') {
+            estadoElement.classList.add('estado-ocupada');
+            estadoElement.innerHTML = '<i class="fas fa-users"></i> Ocupada';
+            if (!mesa.querySelector('.mesa-info')) {
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'mesa-info';
+                infoDiv.innerHTML = `
+                    <div class="mesa-cliente">${datos.cliente || 'Cliente'}</div>
+                    <div class="mesa-tiempo">00:00</div>
+                `;
+                estadoElement.after(infoDiv);
+            } else {
+                const c = mesa.querySelector('.mesa-cliente');
+                if (c && datos.cliente) c.textContent = datos.cliente;
+            }
+            mesa.querySelector('.mesa-acciones').innerHTML = `
+                <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}">
+                    <i class="fas fa-eye"></i> Ver
+                </button>
+                <button class="btn btn-sm btn-primary btn-cerrar" data-id="${mesaId}">
+                    <i class="fas fa-check"></i> Cerrar
+                </button>
+            `;
+            if (options.navigateOnOcupar) {
+                window.appState = window.appState || {};
+                window.appState.currentMesa = { id: mesaId, cliente: datos.cliente || 'Cliente', personas: datos.personas || null };
+                if (typeof loadView === 'function') loadView('ventas-rapidas');
+            }
+        } else if (nuevoEstado === 'reservada') {
+            estadoElement.classList.add('estado-reservada');
+            estadoElement.innerHTML = '<i class="fas fa-calendar-check"></i> Reservada';
+            if (!mesa.querySelector('.mesa-info')) {
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'mesa-info';
+                infoDiv.innerHTML = `
+                    <div class="mesa-cliente">${datos.cliente || 'Reserva'}</div>
+                    <div class="mesa-horario">${datos.hora || '19:30'} hrs</div>
+                `;
+                estadoElement.after(infoDiv);
+            } else {
+                const c = mesa.querySelector('.mesa-cliente');
+                const h = mesa.querySelector('.mesa-horario');
+                if (c && datos.cliente) c.textContent = datos.cliente;
+                if (h && datos.hora) h.textContent = `${datos.hora} hrs`;
+            }
+            mesa.querySelector('.mesa-acciones').innerHTML = `
+                <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}">
+                    <i class="fas fa-eye"></i> Ver
+                </button>
+                <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
+                    <i class="fas fa-play"></i> Ocupar
+                </button>
+            `;
+        }
+
+        // Re-enlazar listeners de los botones generados
+        setTimeout(() => {
+            const newOcuparBtn = mesa.querySelector('.btn-ocupar');
+            const newReservarBtn = mesa.querySelector('.btn-reservar');
+            const newCerrarBtn = mesa.querySelector('.btn-cerrar');
+            const newVerBtn = mesa.querySelector('.btn-ver');
+
+            if (newOcuparBtn) {
+                newOcuparBtn.addEventListener('click', () => {
+                    document.getElementById('mesa-ocupar-id').value = mesaId;
+                    if (formOcupar) formOcupar.reset();
+                    if (modalOcupar) modalOcupar.style.display = 'block';
+                });
+            }
+            if (newReservarBtn) {
+                newReservarBtn.addEventListener('click', () => {
+                    document.getElementById('mesa-reservar-id').value = mesaId;
+                    if (formReservar) formReservar.reset();
+                    if (modalReservar) modalReservar.style.display = 'block';
+                });
+            }
+            if (newCerrarBtn) {
+                newCerrarBtn.addEventListener('click', () => {
+                    if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) {
+                        cambiarEstadoMesa(mesaId, 'disponible');
+                    }
+                });
+            }
+            if (newVerBtn) {
+                newVerBtn.addEventListener('click', () => {
+                    // Lógica para ver detalles
+                });
+            }
+        }, 50);
+    }
+
+    function rehydrateMesasFromStorage() {
+        const saved = getMesasState();
+        Object.keys(saved).forEach(mesaId => {
+            const { estado, datos } = saved[mesaId] || {};
+            if (estado) {
+                applyMesaState(mesaId, estado, datos || {}, { navigateOnOcupar: false });
+            }
+        });
+        actualizarEstadisticas();
+    }
+
+    // ============================
+    // LISTENERS DE ACCIONES
+    // ============================
+
     // Botones de ocupar mesa
     const botonesOcupar = document.querySelectorAll('.btn-ocupar');
     botonesOcupar.forEach(btn => {
@@ -1128,6 +1535,7 @@ function initMesasView() {
                             <i class="fas fa-calendar"></i> Reservar
                         </button>
                     `;
+                    saveMesaState(mesaId, 'disponible', {});
                     break;
                     
                 case 'ocupada':
@@ -1152,6 +1560,13 @@ function initMesasView() {
                             <i class="fas fa-check"></i> Cerrar
                         </button>
                     `;
+                    saveMesaState(mesaId, 'ocupada', { cliente: datos.cliente || 'Cliente', personas: datos.personas || null });
+                    // Guardar contexto y abrir Venta Rápida para asignar pedidos
+                    window.appState = window.appState || {};
+                    window.appState.currentMesa = { id: mesaId, cliente: datos.cliente || 'Cliente', personas: datos.personas || null };
+                    if (typeof loadView === 'function') {
+                        loadView('ventas-rapidas');
+                    }
                     break;
                     
                 case 'reservada':
@@ -1176,6 +1591,7 @@ function initMesasView() {
                             <i class="fas fa-play"></i> Ocupar
                         </button>
                     `;
+                    saveMesaState(mesaId, 'reservada', { cliente: datos.cliente || 'Reserva', hora: datos.hora || '19:30' });
                     break;
             }
             
@@ -1262,8 +1678,8 @@ function initMesasView() {
         });
     }
     
-    // Inicializar estadísticas
-    actualizarEstadisticas();
+    // Rehidratar estados persistidos y estadísticas
+    rehydrateMesasFromStorage();
     
     // Simular tiempo transcurrido para mesas ocupadas
     function actualizarTiempos() {
