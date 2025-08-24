@@ -1,0 +1,431 @@
+<div class="reservaciones-container">
+    <div class="content-box">
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-check"></i> Gestión de Reservaciones</h1>
+            <button class="btn btn-primary" id="btn-nueva-reserva">
+                <i class="fas fa-plus"></i> Nueva Reservación
+            </button>
+        </div>
+
+        <!-- Filtros y controles -->
+        <div class="filtros-container">
+            <div class="filtros-group">
+                <div class="filtro-item">
+                    <label for="filtro-fecha">Fecha:</label>
+                    <input type="date" id="filtro-fecha" class="form-input" value="<?php echo date('Y-m-d'); ?>">
+                </div>
+                
+                <div class="filtro-item">
+                    <label for="filtro-estado">Estado:</label>
+                    <select id="filtro-estado" class="form-select">
+                        <option value="">Todas las reservaciones</option>
+                        <option value="confirmada">Confirmadas</option>
+                        <option value="pendiente">Pendientes</option>
+                        <option value="completada">Completadas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                </div>
+                
+                <div class="filtro-item">
+                    <label for="filtro-mesa">Mesa:</label>
+                    <select id="filtro-mesa" class="form-select">
+                        <option value="">Todas las mesas</option>
+                        <option value="MESA-001">Mesa 1</option>
+                        <option value="MESA-002">Mesa 2</option>
+                        <option value="MESA-003">Mesa 3</option>
+                        <option value="MESA-004">Mesa 4</option>
+                        <option value="MESA-005">Mesa 5</option>
+                        <option value="MESA-006">Mesa 6</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="controles-dia">
+                <button class="btn btn-outline" id="btn-dia-anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span id="fecha-actual" class="fecha-display"><?php echo date('d/m/Y'); ?></span>
+                <button class="btn btn-outline" id="btn-dia-siguiente">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="btn btn-outline" id="btn-hoy">
+                    Hoy
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista de calendario/día -->
+        <div class="vista-reservaciones">
+            <!-- Timeline de reservaciones -->
+            <div class="timeline-reservaciones">
+                <div class="timeline-header">
+                    <div class="timeline-hora">Hora</div>
+                    <div class="timeline-mesas">Mesas</div>
+                </div>
+                
+                <div class="timeline-content">
+                    <!-- Horas del día -->
+                    <div class="timeline-horas">
+                        <div class="timeline-hora-item">10:00</div>
+                        <div class="timeline-hora-item">11:00</div>
+                        <div class="timeline-hora-item">12:00</div>
+                        <div class="timeline-hora-item">13:00</div>
+                        <div class="timeline-hora-item">14:00</div>
+                        <div class="timeline-hora-item">15:00</div>
+                        <div class="timeline-hora-item">16:00</div>
+                        <div class="timeline-hora-item">17:00</div>
+                        <div class="timeline-hora-item">18:00</div>
+                        <div class="timeline-hora-item">19:00</div>
+                        <div class="timeline-hora-item">20:00</div>
+                        <div class="timeline-hora-item">21:00</div>
+                        <div class="timeline-hora-item">22:00</div>
+                    </div>
+                    
+                    <!-- Reservaciones -->
+                    <div class="reservaciones-grid">
+                        <!-- Reservación 1 -->
+                        <div class="reservacion-item confirmada" data-id="RES-001" style="grid-row: 3 / span 2; grid-column: 1;">
+                            <div class="reservacion-content">
+                                <div class="reservacion-cliente">Familia González</div>
+                                <div class="reservacion-info">
+                                    <span>Mesa 2 • 4 personas</span>
+                                    <span>12:00 - 13:30</span>
+                                </div>
+                                <div class="reservacion-notas">Celebración cumpleaños</div>
+                            </div>
+                            <div class="reservacion-acciones">
+                                <button class="btn btn-sm btn-success btn-checkin" data-id="RES-001">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info btn-ver" data-id="RES-001">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Reservación 2 -->
+                        <div class="reservacion-item pendiente" data-id="RES-002" style="grid-row: 5 / span 3; grid-column: 2;">
+                            <div class="reservacion-content">
+                                <div class="reservacion-cliente">Empresa XYZ</div>
+                                <div class="reservacion-info">
+                                    <span>Mesa 6 • 8 personas</span>
+                                    <span>14:00 - 16:00</span>
+                                </div>
+                                <div class="reservacion-notas">Reunión de trabajo</div>
+                            </div>
+                            <div class="reservacion-acciones">
+                                <button class="btn btn-sm btn-warning btn-confirmar" data-id="RES-002">
+                                    <i class="fas fa-phone"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info btn-ver" data-id="RES-002">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Reservación 3 -->
+                        <div class="reservacion-item confirmada" data-id="RES-003" style="grid-row: 8 / span 2; grid-column: 3;">
+                            <div class="reservacion-content">
+                                <div class="reservacion-cliente">Ana Martínez</div>
+                                <div class="reservacion-info">
+                                    <span>Mesa 4 • 2 personas</span>
+                                    <span>19:00 - 20:30</span>
+                                </div>
+                                <div class="reservacion-notas">Cena romántica</div>
+                            </div>
+                            <div class="reservacion-acciones">
+                                <button class="btn btn-sm btn-success btn-checkin" data-id="RES-003">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info btn-ver" data-id="RES-003">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Reservación 4 -->
+                        <div class="reservacion-item completada" data-id="RES-004" style="grid-row: 2 / span 2; grid-column: 4;">
+                            <div class="reservacion-content">
+                                <div class="reservacion-cliente">Juan Pérez</div>
+                                <div class="reservacion-info">
+                                    <span>Mesa 1 • 4 personas</span>
+                                    <span>11:00 - 12:30</span>
+                                </div>
+                                <div class="reservacion-estado">Completada</div>
+                            </div>
+                            <div class="reservacion-acciones">
+                                <button class="btn btn-sm btn-info btn-ver" data-id="RES-004">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de reservaciones -->
+            <div class="lista-reservaciones">
+                <h3>Reservaciones para <span id="fecha-lista"><?php echo date('d/m/Y'); ?></span></h3>
+                
+                <div class="reservaciones-list">
+                    <!-- Reservación 1 -->
+                    <div class="reservacion-card confirmada">
+                        <div class="reservacion-header">
+                            <span class="reservacion-hora">12:00 - 13:30</span>
+                            <span class="reservacion-estado-badge">Confirmada</span>
+                        </div>
+                        <div class="reservacion-body">
+                            <div class="reservacion-cliente">Familia González</div>
+                            <div class="reservacion-details">
+                                <span><i class="fas fa-users"></i> 4 personas</span>
+                                <span><i class="fas fa-chair"></i> Mesa 2</span>
+                                <span><i class="fas fa-phone"></i> 555-1234</span>
+                            </div>
+                            <div class="reservacion-notas">Celebración cumpleaños - Pastel incluido</div>
+                        </div>
+                        <div class="reservacion-actions">
+                            <button class="btn btn-sm btn-success btn-checkin" data-id="RES-001">
+                                <i class="fas fa-check"></i> Check-in
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="RES-001">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="RES-001">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reservación 2 -->
+                    <div class="reservacion-card pendiente">
+                        <div class="reservacion-header">
+                            <span class="reservacion-hora">14:00 - 16:00</span>
+                            <span class="reservacion-estado-badge">Pendiente</span>
+                        </div>
+                        <div class="reservacion-body">
+                            <div class="reservacion-cliente">Empresa XYZ</div>
+                            <div class="reservacion-details">
+                                <span><i class="fas fa-users"></i> 8 personas</span>
+                                <span><i class="fas fa-chair"></i> Mesa 6</span>
+                                <span><i class="fas fa-phone"></i> 555-5678</span>
+                            </div>
+                            <div class="reservacion-notas">Reunión de trabajo - Necesitan proyector</div>
+                        </div>
+                        <div class="reservacion-actions">
+                            <button class="btn btn-sm btn-warning btn-confirmar" data-id="RES-002">
+                                <i class="fas fa-phone"></i> Confirmar
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="RES-002">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="RES-002">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reservación 3 -->
+                    <div class="reservacion-card confirmada">
+                        <div class="reservacion-header">
+                            <span class="reservacion-hora">19:00 - 20:30</span>
+                            <span class="reservacion-estado-badge">Confirmada</span>
+                        </div>
+                        <div class="reservacion-body">
+                            <div class="reservacion-cliente">Ana Martínez</div>
+                            <div class="reservacion-details">
+                                <span><i class="fas fa-users"></i> 2 personas</span>
+                                <span><i class="fas fa-chair"></i> Mesa 4</span>
+                                <span><i class="fas fa-phone"></i> 555-9012</span>
+                            </div>
+                            <div class="reservacion-notas">Cena romántica - Mesa con vista</div>
+                        </div>
+                        <div class="reservacion-actions">
+                            <button class="btn btn-sm btn-success btn-checkin" data-id="RES-003">
+                                <i class="fas fa-check"></i> Check-in
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="RES-003">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="RES-003">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reservación 4 -->
+                    <div class="reservacion-card completada">
+                        <div class="reservacion-header">
+                            <span class="reservacion-hora">11:00 - 12:30</span>
+                            <span class="reservacion-estado-badge">Completada</span>
+                        </div>
+                        <div class="reservacion-body">
+                            <div class="reservacion-cliente">Juan Pérez</div>
+                            <div class="reservacion-details">
+                                <span><i class="fas fa-users"></i> 4 personas</span>
+                                <span><i class="fas fa-chair"></i> Mesa 1</span>
+                                <span><i class="fas fa-phone"></i> 555-3456</span>
+                            </div>
+                            <div class="reservacion-notas">Desayuno familiar</div>
+                        </div>
+                        <div class="reservacion-actions">
+                            <button class="btn btn-sm btn-info btn-ver" data-id="RES-004">
+                                <i class="fas fa-eye"></i> Detalles
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para nueva reservación -->
+<div id="modal-nueva-reserva" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Nueva Reservación</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-nueva-reserva">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reserva-cliente">Cliente *</label>
+                        <input type="text" id="reserva-cliente" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reserva-telefono">Teléfono *</label>
+                        <input type="tel" id="reserva-telefono" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reserva-fecha">Fecha *</label>
+                        <input type="date" id="reserva-fecha" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reserva-hora">Hora *</label>
+                        <input type="time" id="reserva-hora" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reserva-personas">Número de Personas *</label>
+                        <select id="reserva-personas" class="form-select" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="1">1 persona</option>
+                            <option value="2">2 personas</option>
+                            <option value="3">3 personas</option>
+                            <option value="4">4 personas</option>
+                            <option value="5">5 personas</option>
+                            <option value="6">6 personas</option>
+                            <option value="7">7 personas</option>
+                            <option value="8">8 personas</option>
+                            <option value="9">9+ personas</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reserva-mesa">Mesa Preferida</label>
+                        <select id="reserva-mesa" class="form-select">
+                            <option value="">Cualquier mesa disponible</option>
+                            <option value="MESA-001">Mesa 1</option>
+                            <option value="MESA-002">Mesa 2</option>
+                            <option value="MESA-003">Mesa 3</option>
+                            <option value="MESA-004">Mesa 4</option>
+                            <option value="MESA-005">Mesa 5</option>
+                            <option value="MESA-006">Mesa 6</option>
+                            <option value="MESA-007">Mesa 7</option>
+                            <option value="MESA-008">Mesa 8</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reserva-notas">Notas Especiales</label>
+                    <textarea id="reserva-notas" class="form-textarea" rows="3" placeholder="Alergias, preferencias, ocasión especial..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reserva-estado">Estado</label>
+                    <select id="reserva-estado" class="form-select">
+                        <option value="confirmada">Confirmada</option>
+                        <option value="pendiente">Pendiente</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-reserva">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Reservación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ver/editar reservación -->
+<div id="modal-ver-reserva" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Detalles de Reservación</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="reservacion-detalles">
+                <div class="detalle-header">
+                    <span class="reservacion-id">RES-001</span>
+                    <span class="reservacion-estado-badge confirmada">Confirmada</span>
+                </div>
+                
+                <div class="detalle-info">
+                    <div class="info-group">
+                        <h4>Información del Cliente</h4>
+                        <p><strong>Nombre:</strong> Familia González</p>
+                        <p><strong>Teléfono:</strong> 555-1234</p>
+                        <p><strong>Email:</strong> familia.gonzalez@email.com</p>
+                    </div>
+                    
+                    <div class="info-group">
+                        <h4>Detalles de la Reservación</h4>
+                        <p><strong>Fecha:</strong> 15/12/2023</p>
+                        <p><strong>Hora:</strong> 12:00 - 13:30</p>
+                        <p><strong>Personas:</strong> 4</p>
+                        <p><strong>Mesa:</strong> Mesa 2</p>
+                        <p><strong>Duración:</strong> 1.5 horas</p>
+                    </div>
+                    
+                    <div class="info-group">
+                        <h4>Notas Especiales</h4>
+                        <p>Celebración de cumpleaños. Traerán su propio pastel. Prefieren mesa cerca de la ventana.</p>
+                    </div>
+                    
+                    <div class="info-group">
+                        <h4>Historial</h4>
+                        <p><strong>Creada:</strong> 10/12/2023 14:30 por Admin</p>
+                        <p><strong>Confirmada:</strong> 14/12/2023 10:15 por Teléfono</p>
+                        <p><strong>Última modificación:</strong> 14/12/2023 10:15</p>
+                    </div>
+                </div>
+                
+                <div class="detalle-acciones">
+                    <button class="btn btn-success btn-checkin-detalle">
+                        <i class="fas fa-check"></i> Hacer Check-in
+                    </button>
+                    <button class="btn btn-warning btn-editar-detalle">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-cancelar-detalle">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="btn btn-info">
+                        <i class="fas fa-phone"></i> Llamar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

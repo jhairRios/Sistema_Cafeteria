@@ -1,0 +1,429 @@
+<div class="mesas-container">
+    <div class="content-box">
+        <div class="page-header">
+            <h1><i class="fas fa-chair"></i> Gestión de Mesas</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="btn-agregar-mesa">
+                    <i class="fas fa-plus"></i> Agregar Mesa
+                </button>
+                <div class="estado-mesas">
+                    <span class="estado-badge disponible"></span>
+                    <span>Disponible</span>
+                    <span class="estado-badge ocupada"></span>
+                    <span>Ocupada</span>
+                    <span class="estado-badge reservada"></span>
+                    <span>Reservada</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros y búsqueda -->
+        <div class="filtros-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="buscar-mesa" placeholder="Buscar mesas..." class="form-input">
+            </div>
+            
+            <div class="filtros-group">
+                <select id="filtro-estado-mesa" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="disponible">Disponible</option>
+                    <option value="ocupada">Ocupada</option>
+                    <option value="reservada">Reservada</option>
+                </select>
+                
+                <select id="filtro-capacidad" class="form-select">
+                    <option value="">Todas las capacidades</option>
+                    <option value="2">2 personas</option>
+                    <option value="4">4 personas</option>
+                    <option value="6">6 personas</option>
+                    <option value="8">8+ personas</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Estadísticas rápidas -->
+        <div class="estadisticas-mesas">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chair"></i>
+                </div>
+                <div class="stat-value" id="total-mesas">12</div>
+                <div class="stat-label">Total Mesas</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value" id="mesas-disponibles">8</div>
+                <div class="stat-label">Disponibles</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-value" id="mesas-ocupadas">3</div>
+                <div class="stat-label">Ocupadas</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-value" id="mesas-reservadas">1</div>
+                <div class="stat-label">Reservadas</div>
+            </div>
+        </div>
+
+        <!-- Grid de mesas -->
+        <div class="mesas-grid" id="grid-mesas">
+            <!-- Mesa 1 -->
+            <div class="mesa-card disponible" data-id="MESA-001" data-capacidad="4" data-estado="disponible">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 1</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 4
+                    </span>
+                </div>
+                <div class="mesa-estado estado-disponible">
+                    <i class="fas fa-check-circle"></i>
+                    Disponible
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-success btn-ocupar" data-id="MESA-001">
+                        <i class="fas fa-play"></i> Ocupar
+                    </button>
+                    <button class="btn btn-sm btn-warning btn-reservar" data-id="MESA-001">
+                        <i class="fas fa-calendar"></i> Reservar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 2 -->
+            <div class="mesa-card disponible" data-id="MESA-002" data-capacidad="2" data-estado="disponible">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 2</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 2
+                    </span>
+                </div>
+                <div class="mesa-estado estado-disponible">
+                    <i class="fas fa-check-circle"></i>
+                    Disponible
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-success btn-ocupar" data-id="MESA-002">
+                        <i class="fas fa-play"></i> Ocupar
+                    </button>
+                    <button class="btn btn-sm btn-warning btn-reservar" data-id="MESA-002">
+                        <i class="fas fa-calendar"></i> Reservar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 3 -->
+            <div class="mesa-card ocupada" data-id="MESA-003" data-capacidad="6" data-estado="ocupada">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 3</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 6
+                    </span>
+                </div>
+                <div class="mesa-estado estado-ocupada">
+                    <i class="fas fa-users"></i>
+                    Ocupada
+                </div>
+                <div class="mesa-info">
+                    <div class="mesa-cliente">Familia Rodríguez</div>
+                    <div class="mesa-tiempo">00:45</div>
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-info btn-ver" data-id="MESA-003">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-primary btn-cerrar" data-id="MESA-003">
+                        <i class="fas fa-check"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 4 -->
+            <div class="mesa-card disponible" data-id="MESA-004" data-capacidad="4" data-estado="disponible">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 4</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 4
+                    </span>
+                </div>
+                <div class="mesa-estado estado-disponible">
+                    <i class="fas fa-check-circle"></i>
+                    Disponible
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-success btn-ocupar" data-id="MESA-004">
+                        <i class="fas fa-play"></i> Ocupar
+                    </button>
+                    <button class="btn btn-sm btn-warning btn-reservar" data-id="MESA-004">
+                        <i class="fas fa-calendar"></i> Reservar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 5 -->
+            <div class="mesa-card ocupada" data-id="MESA-005" data-capacidad="2" data-estado="ocupada">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 5</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 2
+                    </span>
+                </div>
+                <div class="mesa-estado estado-ocupada">
+                    <i class="fas fa-users"></i>
+                    Ocupada
+                </div>
+                <div class="mesa-info">
+                    <div class="mesa-cliente">Juan Pérez</div>
+                    <div class="mesa-tiempo">01:15</div>
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-info btn-ver" data-id="MESA-005">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-primary btn-cerrar" data-id="MESA-005">
+                        <i class="fas fa-check"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 6 -->
+            <div class="mesa-card reservada" data-id="MESA-006" data-capacidad="8" data-estado="reservada">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 6</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 8
+                    </span>
+                </div>
+                <div class="mesa-estado estado-reservada">
+                    <i class="fas fa-calendar-check"></i>
+                    Reservada
+                </div>
+                <div class="mesa-info">
+                    <div class="mesa-cliente">Empresa XYZ</div>
+                    <div class="mesa-horario">19:30 hrs</div>
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-info btn-ver" data-id="MESA-006">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-success btn-ocupar" data-id="MESA-006">
+                        <i class="fas fa-play"></i> Ocupar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 7 -->
+            <div class="mesa-card disponible" data-id="MESA-007" data-capacidad="4" data-estado="disponible">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 7</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 4
+                    </span>
+                </div>
+                <div class="mesa-estado estado-disponible">
+                    <i class="fas fa-check-circle"></i>
+                    Disponible
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-success btn-ocupar" data-id="MESA-007">
+                        <i class="fas fa-play"></i> Ocupar
+                    </button>
+                    <button class="btn btn-sm btn-warning btn-reservar" data-id="MESA-007">
+                        <i class="fas fa-calendar"></i> Reservar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mesa 8 -->
+            <div class="mesa-card ocupada" data-id="MESA-008" data-capacidad="6" data-estado="ocupada">
+                <div class="mesa-header">
+                    <span class="mesa-numero">Mesa 8</span>
+                    <span class="mesa-capacidad">
+                        <i class="fas fa-user"></i> 6
+                    </span>
+                </div>
+                <div class="mesa-estado estado-ocupada">
+                    <i class="fas fa-users"></i>
+                    Ocupada
+                </div>
+                <div class="mesa-info">
+                    <div class="mesa-cliente">Grupo Estudiantes</div>
+                    <div class="mesa-tiempo">00:30</div>
+                </div>
+                <div class="mesa-acciones">
+                    <button class="btn btn-sm btn-info btn-ver" data-id="MESA-008">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-primary btn-cerrar" data-id="MESA-008">
+                        <i class="fas fa-check"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar/editar mesa -->
+<div id="modal-mesa" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-titulo-mesa">Agregar Mesa</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-mesa">
+                <input type="hidden" id="mesa-id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mesa-numero">Número de Mesa</label>
+                        <input type="text" id="mesa-numero" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mesa-capacidad">Capacidad</label>
+                        <select id="mesa-capacidad" class="form-select" required>
+                            <option value="">Seleccionar capacidad</option>
+                            <option value="2">2 personas</option>
+                            <option value="4">4 personas</option>
+                            <option value="6">6 personas</option>
+                            <option value="8">8 personas</option>
+                            <option value="10">10+ personas</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mesa-ubicacion">Ubicación</label>
+                    <select id="mesa-ubicacion" class="form-select" required>
+                        <option value="">Seleccionar ubicación</option>
+                        <option value="interior">Interior</option>
+                        <option value="exterior">Exterior</option>
+                        <option value="terraza">Terraza</option>
+                        <option value="privado">Área Privada</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mesa-estado">Estado Inicial</label>
+                    <select id="mesa-estado" class="form-select" required>
+                        <option value="disponible">Disponible</option>
+                        <option value="mantenimiento">Mantenimiento</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-mesa">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Mesa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ocupar mesa -->
+<div id="modal-ocupar-mesa" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Ocupar Mesa</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-ocupar-mesa">
+                <input type="hidden" id="mesa-ocupar-id">
+                
+                <div class="form-group">
+                    <label for="cliente-nombre">Nombre del Cliente</label>
+                    <input type="text" id="cliente-nombre" class="form-input" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cliente-personas">Número de Personas</label>
+                        <input type="number" id="cliente-personas" class="form-input" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cliente-telefono">Teléfono (opcional)</label>
+                        <input type="tel" id="cliente-telefono" class="form-input">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cliente-notas">Notas adicionales</label>
+                    <textarea id="cliente-notas" class="form-textarea" rows="3" placeholder="Observaciones especiales..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-ocupar">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Iniciar Servicio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para reservar mesa -->
+<div id="modal-reservar-mesa" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Reservar Mesa</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-reservar-mesa">
+                <input type="hidden" id="mesa-reservar-id">
+                
+                <div class="form-group">
+                    <label for="reserva-nombre">Nombre para la Reservación</label>
+                    <input type="text" id="reserva-nombre" class="form-input" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reserva-fecha">Fecha</label>
+                        <input type="date" id="reserva-fecha" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reserva-hora">Hora</label>
+                        <input type="time" id="reserva-hora" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reserva-personas">Número de Personas</label>
+                        <input type="number" id="reserva-personas" class="form-input" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reserva-telefono">Teléfono</label>
+                        <input type="tel" id="reserva-telefono" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reserva-notas">Notas especiales</label>
+                    <textarea id="reserva-notas" class="form-textarea" rows="3" placeholder="Alergias, preferencias, etc..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-reserva">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Confirmar Reservación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

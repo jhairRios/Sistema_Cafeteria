@@ -1,0 +1,2005 @@
+/*
+============================================================
+    Archivo: frontend/app.js
+    Propósito: Lógica principal del SPA (layout, navegación y vistas)
+
+    Tabla de contenido (solo documentación, sin cambios funcionales):
+    [0] Metadatos y convenciones
+    [1] Bootstrapping y UI global (header, dropdown de usuario, sidebar, overlay)
+    [2] Configuración de navegación (listeners y estado activo)
+    [3] Sistema de vistas (loadView, executeViewScripts)
+    [4] Vistas: Home, Productos, Empleados, Venta Rápida, Mesas, Reservaciones, Ajustes, Reportes
+    [5] Manejo de errores globales (window.error, unhandledrejection)
+    [6] Exposición de funciones globales (browser) y export (CommonJS)
+
+    Convenciones:
+    - Prefijo initNombreVista: función inicializadora por vista.
+    - Los selectores dependen del markup de cada archivo en frontend/views/*.html.
+    - Mantener listeners encapsulados dentro de cada init* para evitar fugas.
+
+    Nota de mantenimiento:
+    - Este archivo contiene secciones duplicadas heredadas de iteraciones previas (p.ej. banners repetidos de HOME/ERRORES/EXPORTS).
+        En esta pasada solo se añade organización documental (comentarios y TOC) sin modificar la lógica existente.
+============================================================
+*/
+
+// ============================
+// FUNCIONALIDADES GLOBALES
+// ============================
+
+// Gestión de usuario
+document.addEventListener('DOMContentLoaded', function() {
+    // Header: nombre de usuario
+    document.getElementById('user-name').textContent = localStorage.getItem('nombreUsuario') || 'Usuario';
+    
+    // Dropdown usuario
+    const userDropdownBtn = document.getElementById('userDropdownBtn');
+    const userDropdown = document.getElementById('userDropdown');
+    
+    if (userDropdownBtn && userDropdown) {
+        userDropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('open');
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('open');
+            }
+        });
+    }
+    
+    // Opciones del menú
+    const verPerfilBtn = document.getElementById('verPerfilBtn');
+    const cerrarSesionBtn = document.getElementById('cerrarSesionBtn');
+    
+    if (verPerfilBtn) {
+        verPerfilBtn.onclick = function() {
+            alert('Ver perfil (implementa la lógica aquí)');
+        };
+    }
+    
+    if (cerrarSesionBtn) {
+        cerrarSesionBtn.onclick = function() {
+            localStorage.removeItem('logueado');
+            window.location.href = 'login.html';
+        };
+    }
+    
+    // Sidebar responsive
+    const sidebar = document.getElementById('sidebarNav');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuToggleHeader = document.getElementById('menu-toggle-header');
+    
+    // Función para abrir el sidebar
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (sidebarOverlay) sidebarOverlay.classList.add('open');
+        if (menuToggle) menuToggle.classList.add('active');
+        if (menuToggleHeader) menuToggleHeader.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Función para cerrar el sidebar
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+        if (menuToggle) menuToggle.classList.remove('active');
+        if (menuToggleHeader) menuToggleHeader.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // Función para toggle del sidebar (colapsar/expandir)
+    function toggleSidebar() {
+        if (window.innerWidth <= 600) {
+            // En móviles: abrir/cerrar menú
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        } else {
+            // En tablets y escritorio: colapsar/expandir menú
+            if (sidebar) sidebar.classList.toggle('collapsed');
+            if (menuToggle) menuToggle.classList.toggle('active');
+        }
+    }
+    
+    // Event listeners para los botones de hamburguesa
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+    }
+    
+    if (menuToggleHeader) {
+        menuToggleHeader.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+    }
+    
+    // Cerrar sidebar al hacer clic en el overlay
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+    
+    // Ajustar el menú al cambiar el tamaño de la ventana
+    function handleResize() {
+        if (window.innerWidth > 600) {
+            // En pantallas más grandes, asegurarse de que el menú esté visible
+            if (sidebar) sidebar.classList.remove('open');
+            if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+            
+            if (window.innerWidth <= 1024) {
+                // Tablets: menú colapsado por defecto
+                if (sidebar) sidebar.classList.add('collapsed');
+                if (menuToggle) menuToggle.classList.add('active');
+            } else {
+                // Escritorio: menú expandido por defecto
+                if (sidebar) sidebar.classList.remove('collapsed');
+                if (menuToggle) menuToggle.classList.remove('active');
+            }
+        } else {
+            // En móviles: menú cerrado por defecto
+            if (sidebar) sidebar.classList.remove('collapsed');
+            closeSidebar();
+        }
+    }
+    
+    // Inicializar el estado del menú según el tamaño de pantalla
+    handleResize();
+    
+    // Escuchar cambios de tamaño de ventana
+    window.addEventListener('resize', handleResize);
+    
+    // Configurar event listeners para los botones de navegación
+    setupNavigationListeners();
+    
+    // Cargar vista inicial
+    loadView('home');
+    
+    // Marcar el botón de inicio como activo
+    const homeButton = document.querySelector('.nav-btn[data-view="home"]');
+    if (homeButton) {
+        homeButton.classList.add('active');
+    }
+});
+
+// ============================
+// CONFIGURACIÓN DE NAVEGACIÓN
+// ============================
+
+function setupNavigationListeners() {
+    // Configurar event listeners para todos los botones de navegación
+    const navButtons = document.querySelectorAll('.nav-btn');
+    
+    navButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const viewName = this.getAttribute('data-view');
+            if (viewName) {
+                // Remover clase active de todos los botones
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Agregar clase active al botón clickeado
+                this.classList.add('active');
+                
+                // Cargar la vista correspondiente
+                loadView(viewName);
+                
+                // Cerrar el menú en móviles después de seleccionar una opción
+                if (window.innerWidth <= 600) {
+                    const sidebar = document.getElementById('sidebarNav');
+                    const sidebarOverlay = document.getElementById('sidebarOverlay');
+                    
+                    if (sidebar) sidebar.classList.remove('open');
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+                    document.body.style.overflow = '';
+                }
+            }
+        });
+    });
+}
+
+// ============================
+// SISTEMA DE VISTAS
+// ============================
+
+// Cargar vistas desde archivos externos
+async function loadView(viewName) {
+    const mainContent = document.getElementById('main-content');
+    
+    try {
+        // Mostrar indicador de carga
+        mainContent.innerHTML = `
+            <div class="content-box" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p>Cargando ${viewName}...</p>
+            </div>
+        `;
+        
+        // Hacer la petición para cargar la vista
+        const response = await fetch(`views/${viewName}.html`);
+        
+        if (!response.ok) {
+            throw new Error(`Error al cargar la vista: ${response.status}`);
+        }
+        
+        const html = await response.text();
+        
+        // Insertar el contenido en el área principal
+        mainContent.innerHTML = html;
+        
+        // Ejecutar scripts específicos para cada vista
+        executeViewScripts(viewName);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mainContent.innerHTML = `
+            <div class="content-box">
+                <h1>Error</h1>
+                <p>No se pudo cargar la vista: ${viewName}</p>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="loadView('home')">
+                    Volver al Inicio
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Función para ejecutar scripts específicos de cada vista
+function executeViewScripts(viewName) {
+    switch(viewName) {
+        case 'home':
+            initHomeView();
+            break;
+        case 'productos':
+            initProductosView();
+            break;
+        case 'empleados':
+            initEmpleadosView();
+            break;
+        case 'ventas-rapidas':
+            initVentaRapidaView();
+            break;
+        case 'mesas':
+            initMesasView();
+            break;
+        case 'reservaciones':
+            initReservacionesView();
+            break;
+        case 'ajustes':
+            initAjustesView();
+            break;
+        default:
+            console.log(`Vista ${viewName} cargada, sin scripts específicos`);
+    }
+}
+
+// ============================
+// VISTA: HOME (DASHBOARD)
+// ============================
+
+function initHomeView() {
+    console.log('Inicializando vista Home');
+    // Aquí puedes agregar lógica específica para el dashboard
+}
+
+// ============================
+// VISTA: PRODUCTOS
+// ============================
+
+function initProductosView() {
+    console.log('Inicializando vista Productos');
+    // Lógica específica de productos...
+}
+
+// ============================
+// VISTA: EMPLEADOS
+// ============================
+
+function initEmpleadosView() {
+    console.log('Inicializando vista Empleados');
+    // Lógica específica de empleados...
+}
+
+// ============================
+// VISTA: VENTA RÁPIDA
+// ============================
+
+function initVentaRapidaView() {
+    console.log('Inicializando vista Venta Rápida');
+    // Lógica específica de ventas rápidas...
+}
+
+// ============================
+// VISTA: MESAS
+// ============================
+
+function initMesasView() {
+    console.log('Inicializando vista Mesas');
+    // Lógica específica de mesas...
+}
+
+// ============================
+// VISTA: RESERVACIONES
+// ============================
+
+function initReservacionesView() {
+    console.log('Inicializando vista Reservaciones');
+    // Lógica específica de reservaciones...
+}
+
+// ============================
+// VISTA: AJUSTES
+// ============================
+
+function initAjustesView() {
+    console.log('Inicializando vista Ajustes');
+    // Lógica específica de ajustes...
+}
+
+// ============================
+// MANEJO DE ERRORES
+// ============================
+
+// Manejar errores no capturados
+window.addEventListener('error', function(e) {
+    console.error('Error no capturado:', e.error);
+});
+
+// Manejar promesas rechazadas no capturadas
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('Promesa rechazada no capturada:', e.reason);
+});
+
+// ============================
+// FUNCIONES GLOBALES
+// ============================
+
+// Hacer funciones disponibles globalmente
+window.loadView = loadView;
+window.toggleSidebar = toggleSidebar;
+// ============================
+// VISTA: HOME (DASHBOARD)
+// ============================
+
+function initHomeView() {
+    console.log('Inicializando vista Home');
+    // Aquí puedes agregar lógica específica para el dashboard
+    // como gráficos, actualizaciones en tiempo real, etc.
+}
+
+// ============================
+// VISTA: PRODUCTOS
+// ============================
+
+function initProductosView() {
+    console.log('Inicializando vista Productos');
+    
+    // Botón agregar producto
+    const addProductBtn = document.getElementById('btn-agregar-producto');
+    const modal = document.getElementById('modal-producto');
+    const closeModal = document.querySelector('.close-modal');
+    const cancelBtn = document.getElementById('btn-cancelar');
+    const productForm = document.getElementById('form-producto');
+    
+    // Abrir modal para agregar producto
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', () => {
+            document.getElementById('modal-titulo').textContent = 'Agregar Producto';
+            document.getElementById('producto-id').value = '';
+            if (productForm) productForm.reset();
+            if (modal) modal.style.display = 'block';
+        });
+    }
+    
+    // Cerrar modal
+    if (closeModal) {
+        closeModal.addEventListener('click', () => {
+            if (modal) modal.style.display = 'none';
+        });
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            if (modal) modal.style.display = 'none';
+        });
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Enviar formulario
+    if (productForm) {
+        productForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Aquí iría la lógica para guardar el producto
+            alert('Producto guardado correctamente');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+    
+    // Botones de editar
+    const editButtons = document.querySelectorAll('.btn-editar');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const productId = btn.getAttribute('data-id');
+            document.getElementById('modal-titulo').textContent = 'Editar Producto';
+            document.getElementById('producto-id').value = productId;
+            
+            // Aquí iría la lógica para cargar los datos del producto
+            // Simulamos datos de ejemplo
+            document.getElementById('producto-nombre').value = 'Café Americano';
+            document.getElementById('producto-categoria').value = 'bebidas-calientes';
+            document.getElementById('producto-precio').value = '2.50';
+            document.getElementById('producto-stock').value = '45';
+            document.getElementById('producto-descripcion').value = 'Café americano tradicional';
+            
+            if (modal) modal.style.display = 'block';
+        });
+    });
+    
+    // Botones de eliminar
+    const deleteButtons = document.querySelectorAll('.btn-eliminar');
+    deleteButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const productId = btn.getAttribute('data-id');
+            if (confirm(`¿Estás seguro de que quieres eliminar el producto ${productId}?`)) {
+                // Aquí iría la lógica para eliminar el producto
+                alert(`Producto ${productId} eliminado correctamente`);
+            }
+        });
+    });
+    
+    // Búsqueda y filtros
+    const searchInput = document.getElementById('buscar-producto');
+    const categoryFilter = document.getElementById('filtro-categoria');
+    const statusFilter = document.getElementById('filtro-estado');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', aplicarFiltros);
+    }
+    
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', aplicarFiltros);
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', aplicarFiltros);
+    }
+    
+    function aplicarFiltros() {
+        // Aquí iría la lógica para filtrar la tabla
+        console.log('Aplicando filtros...');
+    }
+}
+
+// ============================
+// VISTA: EMPLEADOS
+// ============================
+
+function initEmpleadosView() {
+    console.log('Inicializando vista Empleados');
+    
+    // Botón agregar empleado
+    const addEmpleadoBtn = document.getElementById('btn-agregar-empleado');
+    const modal = document.getElementById('modal-empleado');
+    const closeModal = document.querySelector('#modal-empleado .close-modal');
+    const cancelBtn = document.getElementById('btn-cancelar-empleado');
+    const empleadoForm = document.getElementById('form-empleado');
+    
+    // Abrir modal para agregar empleado
+    if (addEmpleadoBtn) {
+        addEmpleadoBtn.addEventListener('click', () => {
+            document.getElementById('modal-titulo-empleado').textContent = 'Agregar Empleado';
+            document.getElementById('empleado-id').value = '';
+            if (empleadoForm) empleadoForm.reset();
+            if (modal) modal.style.display = 'block';
+        });
+    }
+    
+    // Cerrar modal
+    if (closeModal) {
+        closeModal.addEventListener('click', () => {
+            if (modal) modal.style.display = 'none';
+        });
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            if (modal) modal.style.display = 'none';
+        });
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Enviar formulario
+    if (empleadoForm) {
+        empleadoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Aquí iría la lógica para guardar el empleado
+            alert('Empleado guardado correctamente');
+            if (modal) modal.style.display = 'none';
+        });
+    }
+    
+    // Botones de editar
+    const editButtons = document.querySelectorAll('.btn-editar');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empleadoId = btn.getAttribute('data-id');
+            document.getElementById('modal-titulo-empleado').textContent = 'Editar Empleado';
+            document.getElementById('empleado-id').value = empleadoId;
+            
+            // Aquí iría la lógica para cargar los datos del empleado
+            // Simulamos datos de ejemplo
+            document.getElementById('empleado-nombre').value = 'María González';
+            document.getElementById('empleado-email').value = 'maria@restaurante.com';
+            document.getElementById('empleado-telefono').value = '555-1234';
+            document.getElementById('empleado-departamento').value = 'meseros';
+            document.getElementById('empleado-posicion').value = 'Mesera';
+            document.getElementById('empleado-turno').value = 'vespertino';
+            document.getElementById('empleado-salario').value = '1200.00';
+            document.getElementById('empleado-estado').value = 'activo';
+            document.getElementById('empleado-direccion').value = 'Calle Principal #123';
+            
+            if (modal) modal.style.display = 'block';
+        });
+    });
+    
+    // Botones de eliminar
+    const deleteButtons = document.querySelectorAll('.btn-eliminar');
+    deleteButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empleadoId = btn.getAttribute('data-id');
+            if (confirm(`¿Estás seguro de que quieres eliminar al empleado ${empleadoId}?`)) {
+                // Aquí iría la lógica para eliminar el empleado
+                alert(`Empleado ${empleadoId} eliminado correctamente`);
+            }
+        });
+    });
+    
+    // Búsqueda y filtros
+    const searchInput = document.getElementById('buscar-empleado');
+    const deptoFilter = document.getElementById('filtro-departamento');
+    const estadoFilter = document.getElementById('filtro-estado');
+    const turnoFilter = document.getElementById('filtro-turno');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', aplicarFiltrosEmpleados);
+    }
+    
+    if (deptoFilter) {
+        deptoFilter.addEventListener('change', aplicarFiltrosEmpleados);
+    }
+    
+    if (estadoFilter) {
+        estadoFilter.addEventListener('change', aplicarFiltrosEmpleados);
+    }
+    
+    if (turnoFilter) {
+        turnoFilter.addEventListener('change', aplicarFiltrosEmpleados);
+    }
+    
+    function aplicarFiltrosEmpleados() {
+        // Aquí iría la lógica para filtrar la tabla de empleados
+        console.log('Aplicando filtros de empleados...');
+    }
+}
+
+// ============================
+// VISTA: VENTA RÁPIDA
+// ============================
+
+function initVentaRapidaView() {
+    console.log('Inicializando vista Venta Rápida');
+    
+    let carrito = [];
+    let total = 0;
+    
+    // Elementos del DOM
+    const carritoVacio = document.getElementById('carrito-vacio');
+    const carritoLista = document.getElementById('carrito-lista');
+    const carritoItemsBody = document.getElementById('carrito-items-body');
+    const cantidadItems = document.getElementById('cantidad-items');
+    const subtotalElement = document.getElementById('subtotal');
+    const impuestosElement = document.getElementById('impuestos');
+    const totalFinalElement = document.getElementById('total-final');
+    const totalVentaElement = document.getElementById('total-venta');
+    const btnLimpiar = document.getElementById('btn-limpiar-venta');
+    const btnCancelar = document.getElementById('btn-cancelar-venta');
+    const btnProcesar = document.getElementById('btn-procesar-venta');
+    const modalPago = document.getElementById('modal-pago-efectivo');
+    const btnCancelarPago = document.getElementById('btn-cancelar-pago');
+    const btnConfirmarPago = document.getElementById('btn-confirmar-pago');
+    const montoRecibido = document.getElementById('monto-recibido');
+    const pagoTotal = document.getElementById('pago-total');
+    const pagoCambio = document.getElementById('pago-cambio');
+    
+    // Agregar productos al carrito
+    const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
+    botonesAgregar.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const productoCard = e.target.closest('.producto-card');
+            const productoId = productoCard.dataset.id;
+            const productoNombre = productoCard.querySelector('h4').textContent;
+            const productoPrecio = parseFloat(productoCard.dataset.precio);
+            
+            agregarAlCarrito(productoId, productoNombre, productoPrecio);
+        });
+    });
+    
+    // Función para agregar producto al carrito
+    function agregarAlCarrito(id, nombre, precio) {
+        const productoExistente = carrito.find(item => item.id === id);
+        
+        if (productoExistente) {
+            productoExistente.cantidad += 1;
+            productoExistente.subtotal = productoExistente.cantidad * precio;
+        } else {
+            carrito.push({
+                id,
+                nombre,
+                precio,
+                cantidad: 1,
+                subtotal: precio
+            });
+        }
+        
+        actualizarCarrito();
+    }
+    
+    // Actualizar visualización del carrito
+    function actualizarCarrito() {
+        // Calcular totales
+        const subtotal = carrito.reduce((sum, item) => sum + item.subtotal, 0);
+        const impuestos = subtotal * 0.16;
+        total = subtotal + impuestos;
+        
+        // Actualizar UI
+        if (cantidadItems) cantidadItems.textContent = `${carrito.length} items`;
+        if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+        if (impuestosElement) impuestosElement.textContent = `$${impuestos.toFixed(2)}`;
+        if (totalFinalElement) totalFinalElement.textContent = `$${total.toFixed(2)}`;
+        if (totalVentaElement) totalVentaElement.textContent = `$${total.toFixed(2)}`;
+        if (pagoTotal) pagoTotal.textContent = `$${total.toFixed(2)}`;
+        
+        // Mostrar/ocultar carrito vacío
+        if (carrito.length === 0) {
+            if (carritoVacio) carritoVacio.style.display = 'block';
+            if (carritoLista) carritoLista.style.display = 'none';
+        } else {
+            if (carritoVacio) carritoVacio.style.display = 'none';
+            if (carritoLista) carritoLista.style.display = 'block';
+            
+            // Actualizar items del carrito
+            if (carritoItemsBody) {
+                carritoItemsBody.innerHTML = '';
+                carrito.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.nombre}</td>
+                        <td>
+                            <div class="cantidad-control">
+                                <button class="cantidad-btn" data-action="decrease" data-id="${item.id}">-</button>
+                                <input type="number" class="cantidad-input" value="${item.cantidad}" min="1" data-id="${item.id}">
+                                <button class="cantidad-btn" data-action="increase" data-id="${item.id}">+</button>
+                            </div>
+                        </td>
+                        <td>$${item.precio.toFixed(2)}</td>
+                        <td>$${item.subtotal.toFixed(2)}</td>
+                        <td>
+                            <button class="btn-eliminar-item" data-id="${item.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    carritoItemsBody.appendChild(row);
+                });
+                
+                // Agregar event listeners a los nuevos elementos
+                agregarEventListenersCarrito();
+            }
+        }
+    }
+    
+    // Agregar event listeners a los elementos del carrito
+    function agregarEventListenersCarrito() {
+        // Botones de cantidad
+        document.querySelectorAll('.cantidad-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                const productId = e.target.dataset.id;
+                actualizarCantidad(productId, action);
+            });
+        });
+        
+        // Inputs de cantidad
+        document.querySelectorAll('.cantidad-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const productId = e.target.dataset.id;
+                const nuevaCantidad = parseInt(e.target.value);
+                if (nuevaCantidad > 0) {
+                    actualizarCantidadManual(productId, nuevaCantidad);
+                }
+            });
+        });
+        
+        // Botones de eliminar
+        document.querySelectorAll('.btn-eliminar-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                eliminarDelCarrito(productId);
+            });
+        });
+    }
+    
+    // Funciones para manipular el carrito
+    function actualizarCantidad(productId, action) {
+        const item = carrito.find(item => item.id === productId);
+        if (item) {
+            if (action === 'increase') {
+                item.cantidad += 1;
+            } else if (action === 'decrease' && item.cantidad > 1) {
+                item.cantidad -= 1;
+            }
+            item.subtotal = item.cantidad * item.precio;
+            actualizarCarrito();
+        }
+    }
+    
+    function actualizarCantidadManual(productId, cantidad) {
+        const item = carrito.find(item => item.id === productId);
+        if (item) {
+            item.cantidad = cantidad;
+            item.subtotal = item.cantidad * item.precio;
+            actualizarCarrito();
+        }
+    }
+    
+    function eliminarDelCarrito(productId) {
+        carrito = carrito.filter(item => item.id !== productId);
+        actualizarCarrito();
+    }
+    
+    // Botones de acción
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', () => {
+            carrito = [];
+            actualizarCarrito();
+        });
+    }
+    
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres cancelar la venta?')) {
+                carrito = [];
+                actualizarCarrito();
+            }
+        });
+    }
+    
+    if (btnProcesar) {
+        btnProcesar.addEventListener('click', () => {
+            if (carrito.length === 0) {
+                alert('El carrito está vacío');
+                return;
+            }
+            
+            const metodoPago = document.getElementById('metodo-pago').value;
+            
+            if (metodoPago === 'efectivo') {
+                if (modalPago) modalPago.style.display = 'block';
+                if (montoRecibido) montoRecibido.value = '';
+                if (pagoCambio) pagoCambio.textContent = '$0.00';
+            } else {
+                procesarVenta();
+            }
+        });
+    }
+    
+    // Modal de pago
+    if (montoRecibido) {
+        montoRecibido.addEventListener('input', (e) => {
+            const monto = parseFloat(e.target.value) || 0;
+            const cambio = monto - total;
+            if (pagoCambio) pagoCambio.textContent = `$${cambio >= 0 ? cambio.toFixed(2) : '0.00'}`;
+        });
+    }
+    
+    if (btnCancelarPago) {
+        btnCancelarPago.addEventListener('click', () => {
+            if (modalPago) modalPago.style.display = 'none';
+        });
+    }
+    
+    if (btnConfirmarPago) {
+        btnConfirmarPago.addEventListener('click', () => {
+            const monto = parseFloat(montoRecibido.value) || 0;
+            if (monto < total) {
+                alert('El monto recibido es menor que el total');
+                return;
+            }
+            if (modalPago) modalPago.style.display = 'none';
+            procesarVenta();
+        });
+    }
+    
+    // Función para procesar la venta
+    function procesarVenta() {
+        // Aquí iría la lógica para procesar la venta en el backend
+        alert('Venta procesada correctamente');
+        carrito = [];
+        actualizarCarrito();
+    }
+    
+    // Filtros de categoría
+    const categoriaBtns = document.querySelectorAll('.categoria-btn');
+    categoriaBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remover clase active de todos los botones
+            categoriaBtns.forEach(b => b.classList.remove('active'));
+            // Agregar clase active al botón clickeado
+            btn.classList.add('active');
+            
+            const categoria = btn.dataset.categoria;
+            filtrarProductos(categoria);
+        });
+    });
+    
+    // Función para filtrar productos
+    function filtrarProductos(categoria) {
+        const productos = document.querySelectorAll('.producto-card');
+        productos.forEach(producto => {
+            if (categoria === 'todos' || producto.dataset.categoria === categoria) {
+                producto.style.display = 'block';
+            } else {
+                producto.style.display = 'none';
+            }
+        });
+    }
+    
+    // Búsqueda de productos
+    const buscarInput = document.getElementById('buscar-producto-venta');
+    if (buscarInput) {
+        buscarInput.addEventListener('input', (e) => {
+            const termino = e.target.value.toLowerCase();
+            const productos = document.querySelectorAll('.producto-card');
+            
+            productos.forEach(producto => {
+                const nombre = producto.querySelector('h4').textContent.toLowerCase();
+                if (nombre.includes(termino)) {
+                    producto.style.display = 'block';
+                } else {
+                    producto.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Inicializar carrito
+    actualizarCarrito();
+}
+
+// ============================
+// VISTA: MESAS
+// ============================
+
+function initMesasView() {
+    console.log('Inicializando vista Mesas');
+    
+    // Elementos del DOM
+    const btnAgregarMesa = document.getElementById('btn-agregar-mesa');
+    const modalMesa = document.getElementById('modal-mesa');
+    const modalOcupar = document.getElementById('modal-ocupar-mesa');
+    const modalReservar = document.getElementById('modal-reservar-mesa');
+    const formMesa = document.getElementById('form-mesa');
+    const formOcupar = document.getElementById('form-ocupar-mesa');
+    const formReservar = document.getElementById('form-reservar-mesa');
+    
+    // Actualizar estadísticas
+    function actualizarEstadisticas() {
+        const mesas = document.querySelectorAll('.mesa-card');
+        const total = mesas.length;
+        const disponibles = document.querySelectorAll('.mesa-card.disponible').length;
+        const ocupadas = document.querySelectorAll('.mesa-card.ocupada').length;
+        const reservadas = document.querySelectorAll('.mesa-card.reservada').length;
+        
+        if (document.getElementById('total-mesas')) document.getElementById('total-mesas').textContent = total;
+        if (document.getElementById('mesas-disponibles')) document.getElementById('mesas-disponibles').textContent = disponibles;
+        if (document.getElementById('mesas-ocupadas')) document.getElementById('mesas-ocupadas').textContent = ocupadas;
+        if (document.getElementById('mesas-reservadas')) document.getElementById('mesas-reservadas').textContent = reservadas;
+    }
+    
+    // Abrir modal para agregar mesa
+    if (btnAgregarMesa) {
+        btnAgregarMesa.addEventListener('click', () => {
+            document.getElementById('modal-titulo-mesa').textContent = 'Agregar Mesa';
+            document.getElementById('mesa-id').value = '';
+            if (formMesa) formMesa.reset();
+            if (modalMesa) modalMesa.style.display = 'block';
+        });
+    }
+    
+    // Cerrar modales
+    function setupModalClose(modal) {
+        const closeBtn = modal.querySelector('.close-modal');
+        const cancelBtn = modal.querySelector('.btn-outline');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if (modal) modal.style.display = 'none';
+            });
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                if (modal) modal.style.display = 'none';
+            });
+        }
+    }
+    
+    setupModalClose(modalMesa);
+    setupModalClose(modalOcupar);
+    setupModalClose(modalReservar);
+    
+    // Cerrar modales al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modalMesa) modalMesa.style.display = 'none';
+        if (e.target === modalOcupar) modalOcupar.style.display = 'none';
+        if (e.target === modalReservar) modalReservar.style.display = 'none';
+    });
+    
+    // Enviar formulario de mesa
+    if (formMesa) {
+        formMesa.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Aquí iría la lógica para guardar la mesa
+            alert('Mesa guardada correctamente');
+            if (modalMesa) modalMesa.style.display = 'none';
+        });
+    }
+    
+    // Botones de ocupar mesa
+    const botonesOcupar = document.querySelectorAll('.btn-ocupar');
+    botonesOcupar.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mesaId = btn.dataset.id;
+            const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+            
+            if (mesa.dataset.estado === 'disponible' || mesa.dataset.estado === 'reservada') {
+                document.getElementById('mesa-ocupar-id').value = mesaId;
+                if (formOcupar) formOcupar.reset();
+                if (modalOcupar) modalOcupar.style.display = 'block';
+            }
+        });
+    });
+    
+    // Enviar formulario de ocupar mesa
+    if (formOcupar) {
+        formOcupar.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mesaId = document.getElementById('mesa-ocupar-id').value;
+            const cliente = document.getElementById('cliente-nombre').value;
+            const personas = document.getElementById('cliente-personas').value;
+            
+            // Cambiar estado de la mesa
+            cambiarEstadoMesa(mesaId, 'ocupada', {
+                cliente: cliente,
+                personas: personas,
+                tiempoInicio: new Date()
+            });
+            
+            if (modalOcupar) modalOcupar.style.display = 'none';
+            alert(`Mesa ${mesaId} ocupada por ${cliente}`);
+        });
+    }
+    
+    // Botones de reservar mesa
+    const botonesReservar = document.querySelectorAll('.btn-reservar');
+    botonesReservar.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mesaId = btn.dataset.id;
+            const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+            
+            if (mesa.dataset.estado === 'disponible') {
+                document.getElementById('mesa-reservar-id').value = mesaId;
+                // Establecer fecha mínima como hoy
+                document.getElementById('reserva-fecha').min = new Date().toISOString().split('T')[0];
+                if (formReservar) formReservar.reset();
+                if (modalReservar) modalReservar.style.display = 'block';
+            }
+        });
+    });
+    
+    // Enviar formulario de reservar mesa
+    if (formReservar) {
+        formReservar.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mesaId = document.getElementById('mesa-reservar-id').value;
+            const nombre = document.getElementById('reserva-nombre').value;
+            const fecha = document.getElementById('reserva-fecha').value;
+            const hora = document.getElementById('reserva-hora').value;
+            
+            // Cambiar estado de la mesa
+            cambiarEstadoMesa(mesaId, 'reservada', {
+                cliente: nombre,
+                fecha: fecha,
+                hora: hora
+            });
+            
+            if (modalReservar) modalReservar.style.display = 'none';
+            alert(`Mesa ${mesaId} reservada para ${nombre}`);
+        });
+    }
+    
+    // Botones de cerrar mesa
+    const botonesCerrar = document.querySelectorAll('.btn-cerrar');
+    botonesCerrar.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mesaId = btn.dataset.id;
+            if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) {
+                cambiarEstadoMesa(mesaId, 'disponible');
+                alert(`Mesa ${mesaId} cerrada y disponible`);
+            }
+        });
+    });
+    
+    // Botones de ver detalles
+    const botonesVer = document.querySelectorAll('.btn-ver');
+    botonesVer.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mesaId = btn.dataset.id;
+            const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+            const estado = mesa.dataset.estado;
+            
+            let mensaje = `Detalles de la Mesa ${mesaId}\n`;
+            mensaje += `Capacidad: ${mesa.dataset.capacidad} personas\n`;
+            mensaje += `Estado: ${estado}\n`;
+            
+            if (estado === 'ocupada') {
+                const cliente = mesa.querySelector('.mesa-cliente').textContent;
+                const tiempo = mesa.querySelector('.mesa-tiempo').textContent;
+                mensaje += `Cliente: ${cliente}\n`;
+                mensaje += `Tiempo: ${tiempo}\n`;
+            } else if (estado === 'reservada') {
+                const cliente = mesa.querySelector('.mesa-cliente').textContent;
+                const horario = mesa.querySelector('.mesa-horario').textContent;
+                mensaje += `Reserva: ${cliente}\n`;
+                mensaje += `Horario: ${horario}\n`;
+            }
+            
+            alert(mensaje);
+        });
+    });
+    
+    // Función para cambiar estado de mesa
+    function cambiarEstadoMesa(mesaId, nuevoEstado, datos = {}) {
+        const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+        const estadoActual = mesa.dataset.estado;
+        
+        if (estadoActual === nuevoEstado) return;
+        
+        // Animación de cambio de estado
+        mesa.classList.add('cambiando-estado');
+        
+        setTimeout(() => {
+            // Cambiar clases CSS
+            mesa.classList.remove('disponible', 'ocupada', 'reservada');
+            mesa.classList.add(nuevoEstado);
+            mesa.dataset.estado = nuevoEstado;
+            
+            // Cambiar el indicador de estado
+            const estadoElement = mesa.querySelector('.mesa-estado');
+            estadoElement.className = 'mesa-estado';
+            
+            switch(nuevoEstado) {
+                case 'disponible':
+                    estadoElement.classList.add('estado-disponible');
+                    estadoElement.innerHTML = '<i class="fas fa-check-circle"></i> Disponible';
+                    // Limpiar información adicional
+                    if (mesa.querySelector('.mesa-info')) {
+                        mesa.querySelector('.mesa-info').remove();
+                    }
+                    // Cambiar botones
+                    mesa.querySelector('.mesa-acciones').innerHTML = `
+                        <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
+                            <i class="fas fa-play"></i> Ocupar
+                        </button>
+                        <button class="btn btn-sm btn-warning btn-reservar" data-id="${mesaId}">
+                            <i class="fas fa-calendar"></i> Reservar
+                        </button>
+                    `;
+                    break;
+                    
+                case 'ocupada':
+                    estadoElement.classList.add('estado-ocupada');
+                    estadoElement.innerHTML = '<i class="fas fa-users"></i> Ocupada';
+                    // Agregar información del cliente
+                    if (!mesa.querySelector('.mesa-info')) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'mesa-info';
+                        infoDiv.innerHTML = `
+                            <div class="mesa-cliente">${datos.cliente || 'Cliente'}</div>
+                            <div class="mesa-tiempo">00:00</div>
+                        `;
+                        mesa.querySelector('.mesa-estado').after(infoDiv);
+                    }
+                    // Cambiar botones
+                    mesa.querySelector('.mesa-acciones').innerHTML = `
+                        <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                        <button class="btn btn-sm btn-primary btn-cerrar" data-id="${mesaId}">
+                            <i class="fas fa-check"></i> Cerrar
+                        </button>
+                    `;
+                    break;
+                    
+                case 'reservada':
+                    estadoElement.classList.add('estado-reservada');
+                    estadoElement.innerHTML = '<i class="fas fa-calendar-check"></i> Reservada';
+                    // Agregar información de reserva
+                    if (!mesa.querySelector('.mesa-info')) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.className = 'mesa-info';
+                        infoDiv.innerHTML = `
+                            <div class="mesa-cliente">${datos.cliente || 'Reserva'}</div>
+                            <div class="mesa-horario">${datos.hora || '19:30'} hrs</div>
+                        `;
+                        mesa.querySelector('.mesa-estado').after(infoDiv);
+                    }
+                    // Cambiar botones
+                    mesa.querySelector('.mesa-acciones').innerHTML = `
+                        <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                        <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
+                            <i class="fas fa-play"></i> Ocupar
+                        </button>
+                    `;
+                    break;
+            }
+            
+            // Actualizar event listeners de los nuevos botones
+            setTimeout(() => {
+                const newOcuparBtn = mesa.querySelector('.btn-ocupar');
+                const newReservarBtn = mesa.querySelector('.btn-reservar');
+                const newCerrarBtn = mesa.querySelector('.btn-cerrar');
+                const newVerBtn = mesa.querySelector('.btn-ver');
+                
+                if (newOcuparBtn) {
+                    newOcuparBtn.addEventListener('click', () => {
+                        document.getElementById('mesa-ocupar-id').value = mesaId;
+                        if (formOcupar) formOcupar.reset();
+                        if (modalOcupar) modalOcupar.style.display = 'block';
+                    });
+                }
+                
+                if (newReservarBtn) {
+                    newReservarBtn.addEventListener('click', () => {
+                        document.getElementById('mesa-reservar-id').value = mesaId;
+                        if (formReservar) formReservar.reset();
+                        if (modalReservar) modalReservar.style.display = 'block';
+                    });
+                }
+                
+                if (newCerrarBtn) {
+                    newCerrarBtn.addEventListener('click', () => {
+                        if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) {
+                            cambiarEstadoMesa(mesaId, 'disponible');
+                        }
+                    });
+                }
+                
+                if (newVerBtn) {
+                    newVerBtn.addEventListener('click', () => {
+                        // Lógica para ver detalles
+                    });
+                }
+            }, 100);
+            
+            mesa.classList.remove('cambiando-estado');
+            actualizarEstadisticas();
+        }, 300);
+    }
+    
+    // Filtros de mesas
+    const filtroEstado = document.getElementById('filtro-estado-mesa');
+    const filtroCapacidad = document.getElementById('filtro-capacidad');
+    const buscarInput = document.getElementById('buscar-mesa');
+    
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', aplicarFiltrosMesas);
+    }
+    
+    if (filtroCapacidad) {
+        filtroCapacidad.addEventListener('change', aplicarFiltrosMesas);
+    }
+    
+    if (buscarInput) {
+        buscarInput.addEventListener('input', aplicarFiltrosMesas);
+    }
+    
+    function aplicarFiltrosMesas() {
+        const estado = filtroEstado.value;
+        const capacidad = filtroCapacidad.value;
+        const busqueda = buscarInput.value.toLowerCase();
+        
+        const mesas = document.querySelectorAll('.mesa-card');
+        mesas.forEach(mesa => {
+            const mesaEstado = mesa.dataset.estado;
+            const mesaCapacidad = mesa.dataset.capacidad;
+            const mesaNumero = mesa.querySelector('.mesa-numero').textContent.toLowerCase();
+            
+            const coincideEstado = !estado || mesaEstado === estado;
+            const coincideCapacidad = !capacidad || mesaCapacidad === capacidad;
+            const coincideBusqueda = !busqueda || mesaNumero.includes(busqueda);
+            
+            if (coincideEstado && coincideCapacidad && coincideBusqueda) {
+                mesa.style.display = 'block';
+            } else {
+                mesa.style.display = 'none';
+            }
+        });
+    }
+    
+    // Inicializar estadísticas
+    actualizarEstadisticas();
+    
+    // Simular tiempo transcurrido para mesas ocupadas
+    function actualizarTiempos() {
+        const mesasOcupadas = document.querySelectorAll('.mesa-card.ocupada');
+        mesasOcupadas.forEach(mesa => {
+            const tiempoElement = mesa.querySelector('.mesa-tiempo');
+            if (tiempoElement) {
+                // Simular incremento de tiempo (en una app real, calcularías la diferencia)
+                const tiempoActual = tiempoElement.textContent;
+                const [minutos, segundos] = tiempoActual.split(':').map(Number);
+                const nuevosSegundos = segundos + 1;
+                const nuevosMinutos = minutos + Math.floor(nuevosSegundos / 60);
+                
+                tiempoElement.textContent = 
+                    `${nuevosMinutos.toString().padStart(2, '0')}:${(nuevosSegundos % 60).toString().padStart(2, '0')}`;
+            }
+        });
+    }
+    
+    // Actualizar tiempos cada minuto (simulado)
+    setInterval(actualizarTiempos, 1000);
+}
+
+// ============================
+// VISTA: RESERVACIONES
+// ============================
+
+function initReservacionesView() {
+    console.log('Inicializando vista Reservaciones');
+    
+    // Elementos del DOM
+    const btnNuevaReserva = document.getElementById('btn-nueva-reserva');
+    const modalNuevaReserva = document.getElementById('modal-nueva-reserva');
+    const modalVerReserva = document.getElementById('modal-ver-reserva');
+    const formNuevaReserva = document.getElementById('form-nueva-reserva');
+    const filtroFecha = document.getElementById('filtro-fecha');
+    const filtroEstado = document.getElementById('filtro-estado');
+    const filtroMesa = document.getElementById('filtro-mesa');
+    const btnDiaAnterior = document.getElementById('btn-dia-anterior');
+    const btnDiaSiguiente = document.getElementById('btn-dia-siguiente');
+    const btnHoy = document.getElementById('btn-hoy');
+    const fechaActual = document.getElementById('fecha-actual');
+    const fechaLista = document.getElementById('fecha-lista');
+
+    // Fecha actual
+    let fechaSeleccionada = new Date();
+
+    // Inicializar fecha en el filtro
+    function inicializarFecha() {
+        const hoy = new Date().toISOString().split('T')[0];
+        if (filtroFecha) filtroFecha.value = hoy;
+        actualizarDisplayFecha();
+    }
+
+    // Actualizar display de fecha
+    function actualizarDisplayFecha() {
+        const fecha = new Date(filtroFecha.value);
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        if (fechaActual) fechaActual.textContent = fecha.toLocaleDateString('es-ES', options);
+        if (fechaLista) fechaLista.textContent = fecha.toLocaleDateString('es-ES', options);
+        fechaSeleccionada = fecha;
+    }
+
+    // Navegación entre días
+    if (btnDiaAnterior) {
+        btnDiaAnterior.addEventListener('click', () => {
+            const fecha = new Date(filtroFecha.value);
+            fecha.setDate(fecha.getDate() - 1);
+            filtroFecha.value = fecha.toISOString().split('T')[0];
+            actualizarDisplayFecha();
+            cargarReservaciones();
+        });
+    }
+
+    if (btnDiaSiguiente) {
+        btnDiaSiguiente.addEventListener('click', () => {
+            const fecha = new Date(filtroFecha.value);
+            fecha.setDate(fecha.getDate() + 1);
+            filtroFecha.value = fecha.toISOString().split('T')[0];
+            actualizarDisplayFecha();
+            cargarReservaciones();
+        });
+    }
+
+    if (btnHoy) {
+        btnHoy.addEventListener('click', () => {
+            const hoy = new Date().toISOString().split('T')[0];
+            filtroFecha.value = hoy;
+            actualizarDisplayFecha();
+            cargarReservaciones();
+        });
+    }
+
+    // Cambio de fecha
+    if (filtroFecha) {
+        filtroFecha.addEventListener('change', () => {
+            actualizarDisplayFecha();
+            cargarReservaciones();
+        });
+    }
+
+    // Filtros
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', cargarReservaciones);
+    }
+
+    if (filtroMesa) {
+        filtroMesa.addEventListener('change', cargarReservaciones);
+    }
+
+    // Modal nueva reservación
+    if (btnNuevaReserva) {
+        btnNuevaReserva.addEventListener('click', () => {
+            // Establecer fecha mínima como hoy
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('reserva-fecha').min = hoy;
+            document.getElementById('reserva-fecha').value = filtroFecha.value;
+            
+            if (formNuevaReserva) formNuevaReserva.reset();
+            if (modalNuevaReserva) modalNuevaReserva.style.display = 'block';
+        });
+    }
+
+    // Cerrar modales
+    function setupModalClose(modal) {
+        const closeBtn = modal.querySelector('.close-modal');
+        const cancelBtn = modal.querySelector('.btn-outline');
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if (modal) modal.style.display = 'none';
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                if (modal) modal.style.display = 'none';
+            });
+        }
+    }
+
+    setupModalClose(modalNuevaReserva);
+    setupModalClose(modalVerReserva);
+
+    // Cerrar modales al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modalNuevaReserva) modalNuevaReserva.style.display = 'none';
+        if (e.target === modalVerReserva) modalVerReserva.style.display = 'none';
+    });
+
+    // Enviar formulario de nueva reservación
+    if (formNuevaReserva) {
+        formNuevaReserva.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Aquí iría la lógica para crear la reservación
+            alert('Reservación creada correctamente');
+            if (modalNuevaReserva) modalNuevaReserva.style.display = 'none';
+            cargarReservaciones();
+        });
+    }
+
+    // Botones de acción en reservaciones
+    function setupBotonesReservaciones() {
+        // Botones de check-in
+        document.querySelectorAll('.btn-checkin').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const reservacionId = e.target.closest('button').dataset.id;
+                hacerCheckin(reservacionId);
+            });
+        });
+
+        // Botones de confirmar
+        document.querySelectorAll('.btn-confirmar').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const reservacionId = e.target.closest('button').dataset.id;
+                confirmarReservacion(reservacionId);
+            });
+        });
+
+        // Botones de ver
+        document.querySelectorAll('.btn-ver').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const reservacionId = e.target.closest('button').dataset.id;
+                verReservacion(reservacionId);
+            });
+        });
+
+        // Botones de editar
+        document.querySelectorAll('.btn-editar').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const reservacionId = e.target.closest('button').dataset.id;
+                editarReservacion(reservacionId);
+            });
+        });
+    }
+
+    // Funciones de acción
+    function hacerCheckin(reservacionId) {
+        if (confirm('¿Marcar esta reservación como check-in?')) {
+            // Aquí iría la lógica para hacer check-in
+            alert(`Check-in realizado para reservación ${reservacionId}`);
+            cargarReservaciones();
+        }
+    }
+
+    function confirmarReservacion(reservacionId) {
+        if (confirm('¿Confirmar esta reservación por teléfono?')) {
+            // Aquí iría la lógica para confirmar
+            alert(`Reservación ${reservacionId} confirmada`);
+            cargarReservaciones();
+        }
+    }
+
+    function verReservacion(reservacionId) {
+        // Aquí iría la lógica para cargar los detalles
+        if (modalVerReserva) modalVerReserva.style.display = 'block';
+    }
+
+    function editarReservacion(reservacionId) {
+        // Aquí iría la lógica para editar
+        alert(`Editando reservación ${reservacionId}`);
+    }
+
+    // Cargar reservaciones (simulado)
+    function cargarReservaciones() {
+        console.log('Cargando reservaciones para:', filtroFecha.value);
+        // Aquí iría la lógica para cargar reservaciones del backend
+        // Por ahora solo actualizamos los botones
+        setTimeout(() => {
+            setupBotonesReservaciones();
+        }, 100);
+    }
+
+    // Inicializar
+    inicializarFecha();
+    cargarReservaciones();
+    setupBotonesReservaciones();
+
+    // Simular arrastre para las reservaciones en el timeline
+    const reservacionesItems = document.querySelectorAll('.reservacion-item');
+    reservacionesItems.forEach(item => {
+        item.addEventListener('mousedown', iniciarArrastre);
+    });
+
+    function iniciarArrastre(e) {
+        // Lógica básica de arrastre (simplificada)
+        const item = e.target.closest('.reservacion-item');
+        item.style.opacity = '0.8';
+        item.style.cursor = 'grabbing';
+
+        function onMouseMove(e) {
+            // Lógica de arrastre aquí
+        }
+
+        function onMouseUp() {
+            item.style.opacity = '1';
+            item.style.cursor = 'pointer';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    // Auto-actualización cada minuto
+    setInterval(() => {
+        cargarReservaciones();
+    }, 60000);
+}
+
+// ============================
+// VISTA: AJUSTES
+// ============================
+
+function initAjustesView() {
+    console.log('Inicializando vista Ajustes');
+    
+    // Elementos del DOM
+    const menuItems = document.querySelectorAll('.ajuste-menu-item');
+    const secciones = document.querySelectorAll('.ajuste-seccion');
+    const btnGuardar = document.getElementById('btn-guardar-ajustes');
+    const modalConfirmacion = document.getElementById('modal-confirmacion');
+    const btnCancelarCambios = document.getElementById('btn-cancelar-cambios');
+    const btnConfirmarCambios = document.getElementById('btn-confirmar-cambios');
+
+    // Navegación entre secciones
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const target = item.dataset.target;
+            
+            // Remover active de todos los items
+            menuItems.forEach(i => i.classList.remove('active'));
+            // Agregar active al item clickeado
+            item.classList.add('active');
+            
+            // Ocultar todas las secciones
+            secciones.forEach(sec => sec.classList.remove('active'));
+            // Mostrar la sección correspondiente
+            document.getElementById(`seccion-${target}`).classList.add('active');
+        });
+    });
+
+    // Guardar ajustes
+    if (btnGuardar) {
+        btnGuardar.addEventListener('click', () => {
+            if (modalConfirmacion) modalConfirmacion.style.display = 'block';
+        });
+    }
+
+    // Cerrar modal de confirmación
+    if (btnCancelarCambios) {
+        btnCancelarCambios.addEventListener('click', () => {
+            if (modalConfirmacion) modalConfirmacion.style.display = 'none';
+        });
+    }
+
+    if (btnConfirmarCambios) {
+        btnConfirmarCambios.addEventListener('click', () => {
+            guardarAjustes();
+            if (modalConfirmacion) modalConfirmacion.style.display = 'none';
+        });
+    }
+
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === modalConfirmacion) {
+            if (modalConfirmacion) modalConfirmacion.style.display = 'none';
+        }
+    });
+
+    // Función para guardar ajustes
+    function guardarAjustes() {
+        // Recopilar todos los valores de los ajustes
+        const ajustes = {
+            general: {
+                tema: document.getElementById('tema-sistema').value,
+                colorPrincipal: document.getElementById('color-principal').value,
+                idioma: document.getElementById('idioma-sistema').value,
+                zonaHoraria: document.getElementById('zona-horaria').value,
+                formatoFecha: document.getElementById('formato-fecha').value,
+                notificacionesEmail: document.getElementById('notificaciones-email').checked,
+                notificacionesSistema: document.getElementById('notificaciones-sistema').checked,
+                recordatoriosReservas: document.getElementById('recordatorios-reservas').checked
+            },
+            restaurante: {
+                nombre: document.getElementById('nombre-restaurante').value,
+                direccion: document.getElementById('direccion-restaurante').value,
+                telefono: document.getElementById('telefono-restaurante').value,
+                email: document.getElementById('email-restaurante').value,
+                iva: parseFloat(document.getElementById('iva-porcentaje').value),
+                propinaAutomatica: parseFloat(document.getElementById('propina-automatica').value),
+                incluirIva: document.getElementById('incluir-iva-precios').checked
+            },
+            mesas: {
+                numeroMesas: parseInt(document.getElementById('numero-mesas').value),
+                mesas2Personas: parseInt(document.getElementById('mesas-2personas').value),
+                mesas4Personas: parseInt(document.getElementById('mesas-4personas').value),
+                mesas6Personas: parseInt(document.getElementById('mesas-6personas').value),
+                mesas8Personas: parseInt(document.getElementById('mesas-8personas').value),
+                tiempoComida: parseInt(document.getElementById('tiempo-promedio-comida').value),
+                tiempoBebidas: parseInt(document.getElementById('tiempo-promedio-bebidas').value),
+                tiempoLimiteReserva: parseInt(document.getElementById('tiempo-limite-reserva').value)
+            },
+            reservaciones: {
+                anticipacion: parseInt(document.getElementById('anticipacion-reserva').value),
+                maxPersonas: parseInt(document.getElementById('maximo-personas-reserva').value),
+                reservasOnline: document.getElementById('reservas-online').checked,
+                confirmacionAutomatica: document.getElementById('confirmacion-automatica').checked,
+                tiempoRecordatorio: parseInt(document.getElementById('tiempo-recordatorio').value),
+                recordatorioSMS: document.getElementById('recordatorio-sms').checked,
+                recordatorioEmail: document.getElementById('recordatorio-email').checked,
+                tiempoCancelacion: parseInt(document.getElementById('tiempo-cancelacion').value),
+                penalizacionCancelacion: document.getElementById('penalizacion-cancelacion').checked
+            }
+        };
+
+        // Aquí iría la lógica para guardar en el backend
+        console.log('Guardando ajustes:', ajustes);
+        
+        // Simular guardado
+        setTimeout(() => {
+            alert('Ajustes guardados correctamente');
+        }, 500);
+    }
+
+    // Cargar ajustes guardados
+    function cargarAjustes() {
+        // Aquí iría la lógica para cargar ajustes del backend
+        // Por ahora usamos valores por defecto
+        console.log('Cargando ajustes...');
+    }
+
+    // Color picker interactivo
+    const colorPicker = document.getElementById('color-principal');
+    const colorValue = document.querySelector('.color-value');
+    
+    if (colorPicker && colorValue) {
+        colorPicker.addEventListener('input', (e) => {
+            colorValue.textContent = e.target.value;
+            // Aplicar cambio de color en tiempo real
+            document.documentElement.style.setProperty('--color-primario', e.target.value);
+        });
+    }
+
+    // Inicializar
+    cargarAjustes();
+}
+
+// ============================
+// MANEJO DE ERRORES
+// ============================
+
+// Manejar errores no capturados
+window.addEventListener('error', function(e) {
+    console.error('Error no capturado:', e.error);
+});
+
+// Manejar promesas rechazadas no capturadas
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('Promesa rechazada no capturada:', e.reason);
+});
+
+// ============================
+// FUNCIONES GLOBALES
+// ============================
+
+// Hacer funciones disponibles globalmente
+window.loadView = loadView;
+window.toggleSidebar = toggleSidebar;
+
+// Exportar para uso en otros módulos si es necesario
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        loadView,
+        toggleSidebar,
+        initHomeView,
+        initProductosView,
+        initEmpleadosView,
+        initVentaRapidaView,
+        initMesasView,
+        initReservacionesView,
+        initAjustesView
+    };
+}
+// ============================
+// VISTA: REPORTES
+// ============================
+
+function initReportesView() {
+    console.log('Inicializando vista Reportes');
+    
+    // Elementos del DOM
+    const btnGenerarReporte = document.getElementById('btn-generar-reporte');
+    const btnExportarPDF = document.getElementById('btn-exportar-pdf');
+    const btnExportarExcel = document.getElementById('btn-exportar-excel');
+    const btnFiltrosAvanzados = document.getElementById('btn-filtros-avanzados');
+    const panelFiltrosAvanzados = document.getElementById('panel-filtros-avanzados');
+    const btnAplicarFiltros = document.getElementById('btn-aplicar-filtros');
+    const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros');
+    const rangoFecha = document.getElementById('rango-fecha');
+    const fechasPersonalizadas = document.getElementById('fechas-personalizadas');
+    const fechasPersonalizadasHasta = document.getElementById('fechas-personalizadas-hasta');
+    const modalCarga = document.getElementById('modal-carga');
+    const progresoFill = document.getElementById('progreso-fill');
+    const progresoPorcentaje = document.getElementById('progreso-porcentaje');
+    
+    // Inicializar gráficos
+    inicializarGraficos();
+    
+    // Configurar event listeners
+    if (btnGenerarReporte) {
+        btnGenerarReporte.addEventListener('click', generarReporte);
+    }
+    
+    if (btnExportarPDF) {
+        btnExportarPDF.addEventListener('click', exportarPDF);
+    }
+    
+    if (btnExportarExcel) {
+        btnExportarExcel.addEventListener('click', exportarExcel);
+    }
+    
+    if (btnFiltrosAvanzados && panelFiltrosAvanzados) {
+        btnFiltrosAvanzados.addEventListener('click', () => {
+            const isVisible = panelFiltrosAvanzados.style.display === 'block';
+            panelFiltrosAvanzados.style.display = isVisible ? 'none' : 'block';
+            btnFiltrosAvanzados.innerHTML = isVisible ? 
+                '<i class="fas fa-filter"></i> Filtros Avanzados' : 
+                '<i class="fas fa-times"></i> Ocultar Filtros';
+        });
+    }
+    
+    if (btnAplicarFiltros) {
+        btnAplicarFiltros.addEventListener('click', aplicarFiltrosAvanzados);
+    }
+    
+    if (btnLimpiarFiltros) {
+        btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+    }
+    
+    if (rangoFecha && fechasPersonalizadas && fechasPersonalizadasHasta) {
+        rangoFecha.addEventListener('change', function() {
+            const mostrarFechasPersonalizadas = this.value === 'personalizado';
+            fechasPersonalizadas.style.display = mostrarFechasPersonalizadas ? 'block' : 'none';
+            fechasPersonalizadasHasta.style.display = mostrarFechasPersonalizadas ? 'block' : 'none';
+        });
+    }
+    
+    // Configurar botones de tipo de gráfico
+    const botonesTipoGrafico = document.querySelectorAll('.grafico-acciones .btn');
+    botonesTipoGrafico.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remover active de todos los botones
+            botonesTipoGrafico.forEach(b => b.classList.remove('active'));
+            // Agregar active al botón clickeado
+            this.classList.add('active');
+            
+            const tipo = this.getAttribute('data-tipo');
+            cambiarTipoGrafico(tipo);
+        });
+    });
+    
+    // Cargar reporte inicial
+    setTimeout(() => {
+        generarReporte();
+    }, 1000);
+    
+    // Funciones de la vista de reportes
+    function inicializarGraficos() {
+        console.log('Inicializando gráficos...');
+        
+        // Aquí iría la inicialización de Chart.js
+        // Por ahora simulamos la creación de gráficos
+        setTimeout(() => {
+            console.log('Gráficos inicializados');
+        }, 500);
+    }
+    
+    function generarReporte() {
+        console.log('Generando reporte...');
+        
+        // Mostrar modal de carga
+        if (modalCarga) modalCarga.style.display = 'block';
+        
+        // Simular progreso
+        let progreso = 0;
+        const intervalo = setInterval(() => {
+            progreso += 5;
+            if (progresoFill) progresoFill.style.width = `${progreso}%`;
+            if (progresoPorcentaje) progresoPorcentaje.textContent = `${progreso}%`;
+            
+            if (progreso >= 100) {
+                clearInterval(intervalo);
+                
+                // Simular carga de datos
+                setTimeout(() => {
+                    if (modalCarga) modalCarga.style.display = 'none';
+                    cargarDatosReporte();
+                    actualizarMetricas();
+                    actualizarResumen();
+                }, 500);
+            }
+        }, 100);
+    }
+    
+    function cargarDatosReporte() {
+        console.log('Cargando datos del reporte...');
+        
+        // Aquí iría la lógica para cargar datos reales
+        // Por ahora usamos datos de ejemplo
+        
+        // Datos de ejemplo para la tabla
+        const tablaVentas = document.getElementById('tabla-ventas');
+        if (tablaVentas) {
+            const tbody = tablaVentas.querySelector('tbody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td>15/12/2023</td>
+                        <td>12:30</td>
+                        <td>Mesa 2</td>
+                        <td>María González</td>
+                        <td>2 Café Americano, 1 Sandwich</td>
+                        <td>$15.50</td>
+                        <td>Efectivo</td>
+                    </tr>
+                    <tr>
+                        <td>15/12/2023</td>
+                        <td>13:45</td>
+                        <td>Mesa 4</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>3 Capuchino, 2 Brownie</td>
+                        <td>$24.75</td>
+                        <td>Tarjeta</td>
+                    </tr>
+                    <tr>
+                        <td>15/12/2023</td>
+                        <td>14:20</td>
+                        <td>Mesa 1</td>
+                        <td>Ana Martínez</td>
+                        <td>1 Expreso, 1 Jugo de Naranja</td>
+                        <td>$8.50</td>
+                        <td>Efectivo</td>
+                    </tr>
+                    <tr>
+                        <td>15/12/2023</td>
+                        <td>15:30</td>
+                        <td>Mesa 3</td>
+                        <td>María González</td>
+                        <td>4 Café Americano, 2 Sandwich</td>
+                        <td>$31.00</td>
+                        <td>Transferencia</td>
+                    </tr>
+                    <tr>
+                        <td>15/12/2023</td>
+                        <td>16:45</td>
+                        <td>Mesa 5</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>2 Capuchino, 1 Tarta de Manzana</td>
+                        <td>$16.25</td>
+                        <td>Tarjeta</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        console.log('Datos del reporte cargados');
+    }
+    
+    function actualizarMetricas() {
+        console.log('Actualizando métricas...');
+        
+        // Aquí iría la lógica para calcular métricas reales
+        // Por ahora usamos valores de ejemplo
+        if (document.getElementById('total-ventas')) {
+            document.getElementById('total-ventas').textContent = '$95.00';
+        }
+        
+        if (document.getElementById('total-pedidos')) {
+            document.getElementById('total-pedidos').textContent = '5';
+        }
+        
+        if (document.getElementById('total-clientes')) {
+            document.getElementById('total-clientes').textContent = '5';
+        }
+        
+        if (document.getElementById('promedio-mesa')) {
+            document.getElementById('promedio-mesa').textContent = '$19.00';
+        }
+    }
+    
+    function actualizarResumen() {
+        console.log('Actualizando resumen...');
+        
+        // Aquí iría la lógica para calcular el resumen real
+        // Por ahora usamos valores de ejemplo
+        if (document.getElementById('resumen-periodo')) {
+            document.getElementById('resumen-periodo').textContent = '15/12/2023 - 15/12/2023';
+        }
+        
+        if (document.getElementById('resumen-total-ventas')) {
+            document.getElementById('resumen-total-ventas').textContent = '$95.00';
+        }
+        
+        if (document.getElementById('resumen-promedio-venta')) {
+            document.getElementById('resumen-promedio-venta').textContent = '$19.00';
+        }
+        
+        if (document.getElementById('resumen-producto-top')) {
+            document.getElementById('resumen-producto-top').textContent = 'Café Americano (6 unidades)';
+        }
+        
+        if (document.getElementById('resumen-empleado-top')) {
+            document.getElementById('resumen-empleado-top').textContent = 'María González ($46.50)';
+        }
+        
+        if (document.getElementById('resumen-mesa-top')) {
+            document.getElementById('resumen-mesa-top').textContent = 'Mesa 2 ($15.50)';
+        }
+    }
+    
+    function exportarPDF() {
+        console.log('Exportando a PDF...');
+        // Aquí iría la lógica para exportar a PDF
+        alert('Funcionalidad de exportación a PDF en desarrollo');
+    }
+    
+    function exportarExcel() {
+        console.log('Exportando a Excel...');
+        // Aquí iría la lógica para exportar a Excel
+        alert('Funcionalidad de exportación a Excel en desarrollo');
+    }
+    
+    function aplicarFiltrosAvanzados() {
+        console.log('Aplicando filtros avanzados...');
+        
+        // Obtener valores de los filtros
+        const empleado = document.getElementById('filtro-empleado').value;
+        const mesa = document.getElementById('filtro-mesa').value;
+        const producto = document.getElementById('filtro-producto').value;
+        const categoria = document.getElementById('filtro-categoria').value;
+        
+        console.log('Filtros aplicados:', { empleado, mesa, producto, categoria });
+        
+        // Regenerar reporte con los filtros aplicados
+        generarReporte();
+        
+        // Cerrar panel de filtros
+        if (panelFiltrosAvanzados) panelFiltrosAvanzados.style.display = 'none';
+        if (btnFiltrosAvanzados) {
+            btnFiltrosAvanzados.innerHTML = '<i class="fas fa-filter"></i> Filtros Avanzados';
+        }
+    }
+    
+    function limpiarFiltros() {
+        console.log('Limpiando filtros...');
+        
+        // Restablecer valores de los filtros
+        document.getElementById('filtro-empleado').value = '';
+        document.getElementById('filtro-mesa').value = '';
+        document.getElementById('filtro-producto').value = '';
+        document.getElementById('filtro-categoria').value = '';
+        
+        // Regenerar reporte sin filtros
+        generarReporte();
+    }
+    
+    function cambiarTipoGrafico(tipo) {
+        console.log('Cambiando tipo de gráfico a:', tipo);
+        
+        // Aquí iría la lógica para cambiar el tipo de gráfico
+        // Por ahora solo mostramos un mensaje
+        alert(`Cambiando a vista ${tipo} del gráfico`);
+    }
+}
+
+// Asegurar que la función esté disponible globalmente
+window.initReportesView = initReportesView;

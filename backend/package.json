@@ -1,0 +1,14 @@
+{
+  "name": "sistema-backend",
+  "version": "1.0.0",
+  "description": "Backend básico con Express para sistema web",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

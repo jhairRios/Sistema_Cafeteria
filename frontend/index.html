@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema Web</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="ventas-rapidas.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-left">
+        <!-- Botón hamburguesa para móviles en el header -->
+        <button class="menu-toggle-header" id="menu-toggle-header">
+          <span></span><span></span><span></span>
+        </button>
+        Bienvenido, <span id="user-name">Usuario</span>
+      </div>
+      <div class="header-right">
+        <div class="user-dropdown" id="userDropdown">
+          <button class="user-dropdown-btn" id="userDropdownBtn">
+            <i class="fa-solid fa-user"></i>
+            <span>Cuenta</span>
+            <i class="fa-solid fa-caret-down"></i>
+          </button>
+          <div class="user-dropdown-menu" id="userDropdownMenu">
+            <button id="verPerfilBtn">Ver perfil</button>
+            <button id="cerrarSesionBtn">Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="container">
+      <nav class="sidebar" id="sidebarNav">
+        <!-- Botón hamburguesa en el sidebar -->
+        <button
+          id="menu-toggle"
+          aria-label="Mostrar/Ocultar menú"
+          class="menu-toggle"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <button class="nav-btn" data-view="home">
+          <i class="fa-solid fa-house"></i> <span>Inicio</span>
+        </button>
+        <button class="nav-btn" data-view="productos">
+          <i class="fa-solid fa-mug-saucer"></i> <span>Productos</span>
+        </button>
+        <button class="nav-btn" data-view="empleados">
+          <i class="fa-solid fa-users"></i> <span>Empleados</span>
+        </button>
+        <button class="nav-btn" data-view="ventas-rapidas">
+          <i class="fa-solid fa-bolt"></i> <span>Ventas Rápidas</span>
+        </button>
+        <button class="nav-btn" data-view="mesas">
+          <i class="fa-solid fa-chair"></i> <span>Mesas</span>
+        </button>
+        <button class="nav-btn" data-view="reservaciones">
+          <i class="fa-solid fa-calendar-check"></i> <span>Reservaciones</span>
+        </button>
+        <button class="nav-btn" data-view="ajustes">
+          <i class="fa-solid fa-gears"></i> <span>Ajustes</span>
+        </button>
+        <button class="nav-btn" data-view="reportes">
+          <i class="fa-solid fa-cash-register"></i> <span>Reportes</span>
+        </button>
+      </nav>
+
+      <main id="main-content"></main>
+    </div>
+    <script src="app.js"></script>
+    <script>
+      // ...existing code...
+      // Guard de autenticación (frontend)
+      /*function isLoggedIn() {
+          return localStorage.getItem('logueado') === '1';
+        }
+        function requireAuth() {
+          if (!isLoggedIn()) {
+            // Evita volver con "Atrás"
+            window.location.replace('login.html');
+            return false;
+          }
+          return true;
+        }
+
+        // Ejecutar guard al cargar y en cambios de ruta/hash
+        document.addEventListener('DOMContentLoaded', () => {
+          requireAuth();
+        });
+        window.addEventListener('hashchange', requireAuth);
+        window.addEventListener('popstate', requireAuth);
+
+        // Cerrar sesión (asegura redirect sin historial)
+        const cerrarSesionBtn = document.getElementById('cerrarSesionBtn');
+        if (cerrarSesionBtn) {
+          cerrarSesionBtn.addEventListener('click', () => {
+            localStorage.removeItem('logueado');
+            window.location.replace('login.html');
+          });
+        }*/
+      // ...existing code...
+    </script>
+  </body>
+</html>

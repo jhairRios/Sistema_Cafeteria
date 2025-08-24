@@ -1,0 +1,307 @@
+<div class="empleados-container">
+    <div class="content-box">
+        <div class="page-header">
+            <h1><i class="fas fa-users"></i> Gestión de Empleados</h1>
+            <button class="btn btn-primary" id="btn-agregar-empleado">
+                <i class="fas fa-plus"></i> Agregar Empleado
+            </button>
+        </div>
+
+        <!-- Filtros y búsqueda -->
+        <div class="filtros-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="buscar-empleado" placeholder="Buscar empleados..." class="form-input">
+            </div>
+            
+            <div class="filtros-group">
+                <select id="filtro-departamento" class="form-select">
+                    <option value="">Todos los departamentos</option>
+                    <option value="cocina">Cocina</option>
+                    <option value="barra">Barra</option>
+                    <option value="meseros">Meseros</option>
+                    <option value="administracion">Administración</option>
+                    <option value="limpieza">Limpieza</option>
+                </select>
+                
+                <select id="filtro-estado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                    <option value="vacaciones">Vacaciones</option>
+                    <option value="licencia">Licencia</option>
+                </select>
+                
+                <select id="filtro-turno" class="form-select">
+                    <option value="">Todos los turnos</option>
+                    <option value="matutino">Matutino</option>
+                    <option value="vespertino">Vespertino</option>
+                    <option value="nocturno">Nocturno</option>
+                    <option value="completo">Tiempo Completo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tabla de empleados -->
+        <div class="table-container">
+            <table class="data-table" id="tabla-empleados">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Posición</th>
+                        <th>Departamento</th>
+                        <th>Teléfono</th>
+                        <th>Turno</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>EMP-001</td>
+                        <td>María González</td>
+                        <td>Mesera</td>
+                        <td>Meseros</td>
+                        <td>555-1234</td>
+                        <td>Vespertino</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-001">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-001">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-001">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>EMP-002</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>Chef</td>
+                        <td>Cocina</td>
+                        <td>555-5678</td>
+                        <td>Completo</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-002">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-002">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-002">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>EMP-003</td>
+                        <td>Ana Martínez</td>
+                        <td>Barista</td>
+                        <td>Barra</td>
+                        <td>555-9012</td>
+                        <td>Matutino</td>
+                        <td><span class="badge badge-warning">Vacaciones</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-003">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-003">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-003">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>EMP-004</td>
+                        <td>Jorge López</td>
+                        <td>Administrador</td>
+                        <td>Administración</td>
+                        <td>555-3456</td>
+                        <td>Completo</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-004">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-004">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-004">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>EMP-005</td>
+                        <td>Laura Sánchez</td>
+                        <td>Mesera</td>
+                        <td>Meseros</td>
+                        <td>555-7890</td>
+                        <td>Nocturno</td>
+                        <td><span class="badge badge-danger">Inactivo</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-005">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-005">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-005">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>EMP-006</td>
+                        <td>Miguel Ángel Torres</td>
+                        <td>Ayudante de Cocina</td>
+                        <td>Cocina</td>
+                        <td>555-2345</td>
+                        <td>Vespertino</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-006">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-006">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-006">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>EMP-007</td>
+                        <td>Isabel Ramírez</td>
+                        <td>Limpieza</td>
+                        <td>Limpieza</td>
+                        <td>555-6789</td>
+                        <td>Matutino</td>
+                        <td><span class="badge badge-warning">Licencia</span></td>
+                        <td class="acciones">
+                            <button class="btn btn-sm btn-warning btn-editar" data-id="EMP-007">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="EMP-007">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info btn-ver" data-id="EMP-007">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="paginacion">
+            <button class="btn btn-outline" disabled>
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span class="pagina-info">Página 1 de 1</span>
+            <button class="btn btn-outline" disabled>
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar/editar empleado -->
+<div id="modal-empleado" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-titulo-empleado">Agregar Empleado</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-empleado">
+                <input type="hidden" id="empleado-id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empleado-nombre">Nombre completo</label>
+                        <input type="text" id="empleado-nombre" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="empleado-email">Correo electrónico</label>
+                        <input type="email" id="empleado-email" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empleado-telefono">Teléfono</label>
+                        <input type="tel" id="empleado-telefono" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="empleado-departamento">Departamento</label>
+                        <select id="empleado-departamento" class="form-select" required>
+                            <option value="">Seleccionar departamento</option>
+                            <option value="cocina">Cocina</option>
+                            <option value="barra">Barra</option>
+                            <option value="meseros">Meseros</option>
+                            <option value="administracion">Administración</option>
+                            <option value="limpieza">Limpieza</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empleado-posicion">Posición/Cargo</label>
+                        <input type="text" id="empleado-posicion" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="empleado-turno">Turno</label>
+                        <select id="empleado-turno" class="form-select" required>
+                            <option value="">Seleccionar turno</option>
+                            <option value="matutino">Matutino</option>
+                            <option value="vespertino">Vespertino</option>
+                            <option value="nocturno">Nocturno</option>
+                            <option value="completo">Tiempo Completo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empleado-salario">Salario ($)</label>
+                        <input type="number" id="empleado-salario" class="form-input" min="0" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="empleado-estado">Estado</label>
+                        <select id="empleado-estado" class="form-select" required>
+                            <option value="activo">Activo</option>
+                            <option value="inactivo">Inactivo</option>
+                            <option value="vacaciones">Vacaciones</option>
+                            <option value="licencia">Licencia</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="empleado-direccion">Dirección</label>
+                    <textarea id="empleado-direccion" class="form-textarea" rows="2"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="btn-cancelar-empleado">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Empleado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

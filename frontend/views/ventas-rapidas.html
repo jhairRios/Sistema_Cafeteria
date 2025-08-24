@@ -1,0 +1,233 @@
+<div class="venta-rapida-container">
+    <div class="content-box">
+        <div class="page-header">
+            <h1><i class="fas fa-bolt"></i> Venta Rápida</h1>
+            <div class="header-actions">
+                <button class="btn btn-outline" id="btn-limpiar-venta">
+                    <i class="fas fa-broom"></i> Limpiar
+                </button>
+                <div class="total-venta">
+                    <span>Total: </span>
+                    <span id="total-venta">$0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="venta-content">
+            <!-- Panel de productos -->
+            <div class="productos-panel">
+                <div class="panel-header">
+                    <h3>Productos Disponibles</h3>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="buscar-producto-venta" placeholder="Buscar productos..." class="form-input">
+                    </div>
+                </div>
+
+                <div class="categorias-filtros">
+                    <div class="categorias-list">
+                        <button class="categoria-btn active" data-categoria="todos">Todos</button>
+                        <button class="categoria-btn" data-categoria="bebidas-calientes">Bebidas Calientes</button>
+                        <button class="categoria-btn" data-categoria="bebidas-frias">Bebidas Frías</button>
+                        <button class="categoria-btn" data-categoria="comida">Comida</button>
+                        <button class="categoria-btn" data-categoria="postres">Postres</button>
+                    </div>
+                </div>
+
+                <div class="productos-grid">
+                    <!-- Producto 1 -->
+                    <div class="producto-card" data-id="PROD-001" data-categoria="bebidas-calientes" data-precio="2.50">
+                        <div class="producto-img">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="producto-info">
+                            <h4>Café Americano</h4>
+                            <p class="producto-precio">$2.50</p>
+                            <p class="producto-stock">Disponible: 45</p>
+                        </div>
+                        <button class="btn-agregar-producto">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+
+                    <!-- Producto 2 -->
+                    <div class="producto-card" data-id="PROD-002" data-categoria="bebidas-calientes" data-precio="3.25">
+                        <div class="producto-img">
+                            <i class="fas fa-mug-hot"></i>
+                        </div>
+                        <div class="producto-info">
+                            <h4>Capuchino</h4>
+                            <p class="producto-precio">$3.25</p>
+                            <p class="producto-stock">Disponible: 32</p>
+                        </div>
+                        <button class="btn-agregar-producto">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+
+                    <!-- Producto 3 -->
+                    <div class="producto-card" data-id="PROD-003" data-categoria="comida" data-precio="5.75">
+                        <div class="producto-img">
+                            <i class="fas fa-hamburger"></i>
+                        </div>
+                        <div class="producto-info">
+                            <h4>Sandwich de Pollo</h4>
+                            <p class="producto-precio">$5.75</p>
+                            <p class="producto-stock">Disponible: 18</p>
+                        </div>
+                        <button class="btn-agregar-producto">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+
+                    <!-- Producto 4 -->
+                    <div class="producto-card" data-id="PROD-004" data-categoria="postres" data-precio="4.00">
+                        <div class="producto-img">
+                            <i class="fas fa-pie"></i>
+                        </div>
+                        <div class="producto-info">
+                            <h4>Tarta de Manzana</h4>
+                            <p class="producto-precio">$4.00</p>
+                            <p class="producto-stock">Disponible: 6</p>
+                        </div>
+                        <button class="btn-agregar-producto">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+
+                    <!-- Producto 5 -->
+                    <div class="producto-card" data-id="PROD-005" data-categoria="bebidas-frias" data-precio="3.00">
+                        <div class="producto-img">
+                            <i class="fas fa-glass"></i>
+                        </div>
+                        <div class="producto-info">
+                            <h4>Jugo de Naranja</h4>
+                            <p class="producto-precio">$3.00</p>
+                            <p class="producto-stock disponible">Disponible: 20</p>
+                        </div>
+                        <button class="btn-agregar-producto">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+
+                    <!-- Producto 6 -->
+                    <div class="producto-card" data-id="PROD-006" data-categoria="bebidas-calientes" data-precio="2.00">
+                        <div class="producto-img">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="producto-info">
+                            <h4>Expreso</h4>
+                            <p class="producto-precio">$2.00</p>
+                            <p class="producto-stock">Disponible: 28</p>
+                        </div>
+                        <button class="btn-agregar-producto">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel del carrito -->
+            <div class="carrito-panel">
+                <div class="panel-header">
+                    <h3>Carrito de Venta</h3>
+                    <div class="carrito-info">
+                        <span id="cantidad-items">0 items</span>
+                    </div>
+                </div>
+
+                <div class="carrito-items">
+                    <div class="carrito-vacio" id="carrito-vacio">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>No hay productos en el carrito</p>
+                    </div>
+
+                    <div class="carrito-lista" id="carrito-lista" style="display: none;">
+                        <table class="carrito-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio</th>
+                                    <th>Subtotal</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="carrito-items-body">
+                                <!-- Los items del carrito se agregarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="carrito-totales">
+                    <div class="total-line">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="total-line">
+                        <span>Impuestos (16%):</span>
+                        <span id="impuestos">$0.00</span>
+                    </div>
+                    <div class="total-line total-final">
+                        <span>Total:</span>
+                        <span id="total-final">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="carrito-acciones">
+                    <div class="metodo-pago">
+                        <label>Método de Pago:</label>
+                        <select id="metodo-pago" class="form-select">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                        </select>
+                    </div>
+
+                    <div class="acciones-buttons">
+                        <button class="btn btn-outline" id="btn-cancelar-venta">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button class="btn btn-success" id="btn-procesar-venta">
+                            <i class="fas fa-check"></i> Procesar Venta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de pago en efectivo -->
+<div id="modal-pago-efectivo" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Pago en Efectivo</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="pago-info">
+                <div class="pago-total">
+                    <span>Total a pagar:</span>
+                    <span id="pago-total">$0.00</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="monto-recibido">Monto recibido:</label>
+                    <input type="number" id="monto-recibido" class="form-input" min="0" step="0.01" placeholder="0.00">
+                </div>
+                
+                <div class="pago-cambio">
+                    <span>Cambio:</span>
+                    <span id="pago-cambio">$0.00</span>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="btn-cancelar-pago">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-confirmar-pago">Confirmar Pago</button>
+            </div>
+        </div>
+    </div>
+</div>

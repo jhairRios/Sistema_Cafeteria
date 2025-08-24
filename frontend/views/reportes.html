@@ -1,0 +1,305 @@
+<div class="reportes-container">
+    <div class="content-box">
+        <div class="page-header">
+            <h1><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h1>
+            <div class="header-actions">
+                <button class="btn btn-outline" id="btn-exportar-pdf">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button class="btn btn-outline" id="btn-exportar-excel">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+                <button class="btn btn-primary" id="btn-generar-reporte">
+                    <i class="fas fa-sync"></i> Generar Reporte
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros de reportes -->
+        <div class="filtros-container">
+            <div class="filtros-group">
+                <div class="filtro-item">
+                    <label for="tipo-reporte">Tipo de Reporte</label>
+                    <select id="tipo-reporte" class="form-select">
+                        <option value="ventas">Ventas</option>
+                        <option value="productos">Productos Más Vendidos</option>
+                        <option value="mesas">Uso de Mesas</option>
+                        <option value="empleados">Desempeño de Empleados</option>
+                        <option value="clientes">Clientes Frecuentes</option>
+                        <option value="reservaciones">Reservaciones</option>
+                    </select>
+                </div>
+                
+                <div class="filtro-item">
+                    <label for="rango-fecha">Rango de Fechas</label>
+                    <select id="rango-fecha" class="form-select">
+                        <option value="hoy">Hoy</option>
+                        <option value="ayer">Ayer</option>
+                        <option value="semana">Esta Semana</option>
+                        <option value="mes">Este Mes</option>
+                        <option value="trimestre">Este Trimestre</option>
+                        <option value="anio">Este Año</option>
+                        <option value="personalizado">Personalizado</option>
+                    </select>
+                </div>
+                
+                <div class="filtro-item" id="fechas-personalizadas" style="display: none;">
+                    <label for="fecha-desde">Desde</label>
+                    <input type="date" id="fecha-desde" class="form-input">
+                </div>
+                
+                <div class="filtro-item" id="fechas-personalizadas-hasta" style="display: none;">
+                    <label for="fecha-hasta">Hasta</label>
+                    <input type="date" id="fecha-hasta" class="form-input">
+                </div>
+            </div>
+            
+            <div class="filtros-avanzados">
+                <button class="btn btn-outline" id="btn-filtros-avanzados">
+                    <i class="fas fa-filter"></i> Filtros Avanzados
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel de filtros avanzados -->
+        <div class="filtros-avanzados-panel" id="panel-filtros-avanzados" style="display: none;">
+            <h3>Filtros Avanzados</h3>
+            <div class="filtros-avanzados-content">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filtro-empleado">Empleado</label>
+                        <select id="filtro-empleado" class="form-select">
+                            <option value="">Todos los empleados</option>
+                            <option value="1">María González</option>
+                            <option value="2">Carlos Rodríguez</option>
+                            <option value="3">Ana Martínez</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filtro-mesa">Mesa</label>
+                        <select id="filtro-mesa" class="form-select">
+                            <option value="">Todas las mesas</option>
+                            <option value="1">Mesa 1</option>
+                            <option value="2">Mesa 2</option>
+                            <option value="3">Mesa 3</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filtro-producto">Producto</label>
+                        <select id="filtro-producto" class="form-select">
+                            <option value="">Todos los productos</option>
+                            <option value="1">Café Americano</option>
+                            <option value="2">Capuchino</option>
+                            <option value="3">Sandwich de Pollo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filtro-categoria">Categoría</label>
+                        <select id="filtro-categoria" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            <option value="bebidas-calientes">Bebidas Calientes</option>
+                            <option value="bebidas-frias">Bebidas Frías</option>
+                            <option value="comida">Comida</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-outline" id="btn-limpiar-filtros">
+                        <i class="fas fa-broom"></i> Limpiar Filtros
+                    </button>
+                    <button class="btn btn-primary" id="btn-aplicar-filtros">
+                        <i class="fas fa-check"></i> Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de métricas -->
+        <div class="metricas-resumen">
+            <div class="metrica-card">
+                <div class="metrica-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="metrica-info">
+                    <div class="metrica-valor" id="total-ventas">$0.00</div>
+                    <div class="metrica-label">Ventas Totales</div>
+                </div>
+            </div>
+            
+            <div class="metrica-card">
+                <div class="metrica-icon">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <div class="metrica-info">
+                    <div class="metrica-valor" id="total-pedidos">0</div>
+                    <div class="metrica-label">Pedidos Totales</div>
+                </div>
+            </div>
+            
+            <div class="metrica-card">
+                <div class="metrica-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metrica-info">
+                    <div class="metrica-valor" id="total-clientes">0</div>
+                    <div class="metrica-label">Clientes Atendidos</div>
+                </div>
+            </div>
+            
+            <div class="metrica-card">
+                <div class="metrica-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="metrica-info">
+                    <div class="metrica-valor" id="promedio-mesa">$0.00</div>
+                    <div class="metrica-label">Promedio por Mesa</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos y visualizaciones -->
+        <div class="reporte-graficos">
+            <div class="grafico-container">
+                <div class="grafico-header">
+                    <h3>Ventas por Día</h3>
+                    <div class="grafico-acciones">
+                        <button class="btn btn-sm btn-outline active" data-tipo="diario">
+                            Diario
+                        </button>
+                        <button class="btn btn-sm btn-outline" data-tipo="semanal">
+                            Semanal
+                        </button>
+                        <button class="btn btn-sm btn-outline" data-tipo="mensual">
+                            Mensual
+                        </button>
+                    </div>
+                </div>
+                <div class="grafico-content">
+                    <canvas id="grafico-ventas" height="300"></canvas>
+                </div>
+            </div>
+            
+            <div class="graficos-secundarios">
+                <div class="grafico-container">
+                    <div class="grafico-header">
+                        <h3>Productos Más Vendidos</h3>
+                    </div>
+                    <div class="grafico-content">
+                        <canvas id="grafico-productos" height="250"></canvas>
+                    </div>
+                </div>
+                
+                <div class="grafico-container">
+                    <div class="grafico-header">
+                        <h3>Ventas por Categoría</h3>
+                    </div>
+                    <div class="grafico-content">
+                        <canvas id="grafico-categorias" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tablas de datos -->
+        <div class="reporte-tablas">
+            <div class="tabla-container">
+                <div class="tabla-header">
+                    <h3>Detalle de Ventas</h3>
+                    <div class="tabla-acciones">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="buscar-ventas" placeholder="Buscar ventas..." class="form-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="tabla-ventas">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Mesa</th>
+                                <th>Empleado</th>
+                                <th>Productos</th>
+                                <th>Total</th>
+                                <th>Método Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tabla-paginacion">
+                    <button class="btn btn-outline" disabled>
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <span class="pagina-info">Página 1 de 1</span>
+                    <button class="btn btn-outline" disabled>
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen final -->
+        <div class="reporte-resumen">
+            <div class="resumen-card">
+                <h3>Resumen del Reporte</h3>
+                <div class="resumen-content">
+                    <div class="resumen-item">
+                        <span>Período:</span>
+                        <span id="resumen-periodo">15/12/2023 - 15/12/2023</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Total Ventas:</span>
+                        <span id="resumen-total-ventas">$0.00</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Venta Promedio:</span>
+                        <span id="resumen-promedio-venta">$0.00</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Producto Más Vendido:</span>
+                        <span id="resumen-producto-top">N/A</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Empleado Destacado:</span>
+                        <span id="resumen-empleado-top">N/A</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Mesa Más Utilizada:</span>
+                        <span id="resumen-mesa-top">N/A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de carga -->
+<div id="modal-carga" class="modal">
+    <div class="modal-content modal-carga">
+        <div class="modal-body">
+            <div class="carga-contenido">
+                <div class="carga-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <h3>Generando Reporte</h3>
+                <p>Por favor espere, esto puede tomar unos segundos...</p>
+                <div class="carga-progreso">
+                    <div class="progreso-bar">
+                        <div class="progreso-fill" id="progreso-fill"></div>
+                    </div>
+                    <span id="progreso-porcentaje">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

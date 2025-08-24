@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <div class="login-card">
+      <div>
+        <h2 class="login-title">Iniciar sesión</h2>
+        <p class="login-desc">
+          Ingresa tus credenciales para acceder al Sistema
+        </p>
+      </div>
+      <form id="loginForm" autocomplete="on">
+        <div class="form-group">
+          <input
+            type="email"
+            id="email"
+            class="login-input"
+            placeholder="Correo electrónico"
+            required
+            autocomplete="email"
+          />
+        </div>
+        <div class="form-group">
+          <input
+            type="password"
+            id="password"
+            class="login-input"
+            placeholder="Contraseña"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+        <!-- form-options omitido -->
+        <button type="submit" class="login-btn">Entrar</button>
+      </form>
+      <!-- login-footer omitido -->
+    </div>
+    <script src="login.js"></script>
+  </body>
+</html>
