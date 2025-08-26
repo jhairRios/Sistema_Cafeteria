@@ -75,38 +75,7 @@
 
       <main id="main-content"></main>
     </div>
-    <script src="app.js"></script>
-    <script>
-      // ...existing code...
-      // Guard de autenticación (frontend)
-      /*function isLoggedIn() {
-          return localStorage.getItem('logueado') === '1';
-        }
-        function requireAuth() {
-          if (!isLoggedIn()) {
-            // Evita volver con "Atrás"
-            window.location.replace('login.html');
-            return false;
-          }
-          return true;
-        }
-
-        // Ejecutar guard al cargar y en cambios de ruta/hash
-        document.addEventListener('DOMContentLoaded', () => {
-          requireAuth();
-        });
-        window.addEventListener('hashchange', requireAuth);
-        window.addEventListener('popstate', requireAuth);
-
-        // Cerrar sesión (asegura redirect sin historial)
-        const cerrarSesionBtn = document.getElementById('cerrarSesionBtn');
-        if (cerrarSesionBtn) {
-          cerrarSesionBtn.addEventListener('click', () => {
-            localStorage.removeItem('logueado');
-            window.location.replace('login.html');
-          });
-        }*/
-      // ...existing code...
-    </script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
   </body>
 </html>

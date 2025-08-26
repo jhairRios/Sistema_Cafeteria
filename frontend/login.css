@@ -170,3 +170,53 @@ body {
     font-size: 1.3rem;
   }
 }
+
+/* Toasts */
+#toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  min-width: 260px;
+  max-width: 360px;
+  background: #ffffff;
+  color: #1f2937;
+  border-left: 5px solid var(--color-primario);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: auto;
+  animation: slideIn 200ms ease-out;
+}
+.toast.success { border-left-color: #16a34a; }
+.toast.error { border-left-color: #ef4444; }
+.toast .toast-title {
+  font-weight: 700;
+  margin: 0 0 2px 0;
+}
+.toast .toast-msg {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+.toast .toast-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: #6b7280;
+  cursor: pointer;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

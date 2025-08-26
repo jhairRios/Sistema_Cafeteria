@@ -167,6 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (homeButton) {
         homeButton.classList.add('active');
     }
+    // Exponer toggleSidebar globalmente cuando ya está definido en este scope
+    window.toggleSidebar = toggleSidebar;
 });
 
 // ============================
@@ -412,91 +414,6 @@ function initHomeView() {
 
 function initProductosView() {
     console.log('Inicializando vista Productos');
-    // Lógica específica de productos...
-}
-
-// ============================
-// VISTA: EMPLEADOS
-// ============================
-
-function initEmpleadosView() {
-    console.log('Inicializando vista Empleados');
-    // Lógica específica de empleados...
-}
-
-// ============================
-// VISTA: VENTA RÁPIDA
-// ============================
-
-function initVentaRapidaView() {
-    console.log('Inicializando vista Venta Rápida');
-    // Lógica específica de ventas rápidas...
-}
-
-// ============================
-// VISTA: MESAS
-// ============================
-
-function initMesasView() {
-    console.log('Inicializando vista Mesas');
-    // Lógica específica de mesas...
-}
-
-// ============================
-// VISTA: RESERVACIONES
-// ============================
-
-function initReservacionesView() {
-    console.log('Inicializando vista Reservaciones');
-    // Lógica específica de reservaciones...
-}
-
-// ============================
-// VISTA: AJUSTES
-// ============================
-
-function initAjustesView() {
-    console.log('Inicializando vista Ajustes');
-    // Lógica específica de ajustes...
-}
-
-// ============================
-// MANEJO DE ERRORES
-// ============================
-
-// Manejar errores no capturados
-window.addEventListener('error', function(e) {
-    console.error('Error no capturado:', e.error);
-});
-
-// Manejar promesas rechazadas no capturadas
-window.addEventListener('unhandledrejection', function(e) {
-    console.error('Promesa rechazada no capturada:', e.reason);
-});
-
-// ============================
-// FUNCIONES GLOBALES
-// ============================
-
-// Hacer funciones disponibles globalmente
-window.loadView = loadView;
-window.toggleSidebar = toggleSidebar;
-// ============================
-// VISTA: HOME (DASHBOARD)
-// ============================
-
-function initHomeView() {
-    console.log('Inicializando vista Home');
-    // Aquí puedes agregar lógica específica para el dashboard
-    // como gráficos, actualizaciones en tiempo real, etc.
-}
-
-// ============================
-// VISTA: PRODUCTOS
-// ============================
-
-function initProductosView() {
-    console.log('Inicializando vista Productos');
     
     // Botón agregar producto
     const addProductBtn = document.getElementById('btn-agregar-producto');
@@ -605,117 +522,446 @@ function initProductosView() {
 // ============================
 
 function initEmpleadosView() {
-    console.log('Inicializando vista Empleados');
-    
-    // Botón agregar empleado
-    const addEmpleadoBtn = document.getElementById('btn-agregar-empleado');
-    const modal = document.getElementById('modal-empleado');
-    const closeModal = document.querySelector('#modal-empleado .close-modal');
-    const cancelBtn = document.getElementById('btn-cancelar-empleado');
-    const empleadoForm = document.getElementById('form-empleado');
-    
-    // Abrir modal para agregar empleado
-    if (addEmpleadoBtn) {
-        addEmpleadoBtn.addEventListener('click', () => {
-            document.getElementById('modal-titulo-empleado').textContent = 'Agregar Empleado';
-            document.getElementById('empleado-id').value = '';
-            if (empleadoForm) empleadoForm.reset();
-            if (modal) modal.style.display = 'block';
+  console.log('Inicializando vista Empleados');
+
+  const tbody = document.querySelector('#tabla-empleados tbody');
+  const modal = document.getElementById('modal-empleado');
+    // Estado local
+    let empleadosCache = [];
+    let rolesCache = [];
+
+    // Helpers para UI (listas dinámicas)
+    function setOptions(select, items, { valueKey = 'id', labelKey = 'nombre', placeholder = 'Seleccionar' } = {}) {
+        if (!select) return;
+        select.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = placeholder;
+        select.appendChild(ph);
+        items.forEach(it => {
+            const opt = document.createElement('option');
+            opt.value = it[valueKey];
+            opt.textContent = it[labelKey];
+            select.appendChild(opt);
         });
     }
-    
-    // Cerrar modal
-    if (closeModal) {
-        closeModal.addEventListener('click', () => {
-            if (modal) modal.style.display = 'none';
+
+    function setDatalist(listEl, values) {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        Array.from(new Set(values.filter(Boolean))).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'})).forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            listEl.appendChild(opt);
         });
     }
-    
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            if (modal) modal.style.display = 'none';
-        });
-    }
-    
-    // Cerrar modal al hacer clic fuera
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
+
+    async function loadRoles() {
+        if (rolesCache.length) return rolesCache;
+        try {
+            const res = await fetch('/api/roles');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const text = await res.text();
+            const data = JSON.parse(text);
+            rolesCache = Array.isArray(data) ? data : [];
+            setOptions(document.getElementById('empleado-rol'), rolesCache, { placeholder: 'Selecciona un rol' });
+        } catch (e) {
+            console.error('Error cargando roles', e);
+            // Fallback mínimo para no bloquear creación
+            rolesCache = [ { id: 1, nombre: 'Administrador' }, { id: 2, nombre: 'Cajero' }, { id: 3, nombre: 'Mesero' } ];
+            setOptions(document.getElementById('empleado-rol'), rolesCache, { placeholder: 'Selecciona un rol' });
         }
+        return rolesCache;
+    }
+  const closeModal = document.querySelector('#modal-empleado .close-modal');
+  const cancelBtn = document.getElementById('btn-cancelar-empleado');
+  const empleadoForm = document.getElementById('form-empleado');
+  const addEmpleadoBtn = document.getElementById('btn-agregar-empleado');
+
+  // Render helpers
+  function rowHtml(e) {
+    const estadoBadge = e.estado === 'activo' ? 'badge-success' : (e.estado === 'inactivo' ? 'badge-danger' : 'badge-warning');
+    return `
+      <tr data-id="${e.id}">
+        <td>${e.id}</td>
+        <td>${e.nombre || ''}</td>
+        <td>${e.posicion || ''}</td>
+        <td>${e.departamento || ''}</td>
+        <td>${e.telefono || ''}</td>
+        <td>${e.turno || ''}</td>
+        <td><span class="badge ${estadoBadge}">${e.estado || ''}</span></td>
+        <td class="acciones">
+          <button class="btn btn-sm btn-warning btn-editar" data-id="${e.id}"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-danger btn-eliminar" data-id="${e.id}"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-sm btn-info btn-ver" data-id="${e.id}"><i class="fas fa-eye"></i></button>
+        </td>
+      </tr>`;
+  }
+
+  function bindRowActions(tr) {
+    const id = tr.getAttribute('data-id');
+    tr.querySelector('.btn-editar')?.addEventListener('click', async () => {
+      const res = await fetch(`/api/empleados/${id}`);
+      if (!res.ok) return alert('No se pudo cargar el empleado');
+      const empText = await res.text();
+      let emp;
+      try { emp = JSON.parse(empText); } catch { return alert('Respuesta no válida del servidor'); }
+      document.getElementById('modal-titulo-empleado').textContent = 'Editar Empleado';
+      document.getElementById('empleado-id').value = emp.id;
+      document.getElementById('empleado-nombre').value = emp.nombre || '';
+      document.getElementById('empleado-email').value = emp.correo || '';
+      document.getElementById('empleado-telefono').value = emp.telefono || '';
+      document.getElementById('empleado-departamento').value = emp.departamento || '';
+      document.getElementById('empleado-posicion').value = emp.posicion || '';
+      document.getElementById('empleado-turno').value = emp.turno || '';
+      document.getElementById('empleado-salario').value = emp.salario || 0;
+      document.getElementById('empleado-estado').value = emp.estado || 'activo';
+      document.getElementById('empleado-direccion').value = emp.direccion || '';
+      // Deshabilitar credenciales al editar (no se editan aquí)
+      document.getElementById('empleado-usuario').disabled = true;
+      document.getElementById('empleado-contrasena').disabled = true;
+      document.getElementById('empleado-rol').disabled = true;
+      if (modal) modal.style.display = 'block';
+    });
+
+    tr.querySelector('.btn-eliminar')?.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar empleado?')) return;
+      const res = await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        tr.remove();
+      } else {
+        alert('No se pudo eliminar');
+      }
+    });
+  }
+
+  async function loadEmpleados() {
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8">Cargando...</td></tr>';
+    try {
+      const res = await fetch('/api/empleados');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Respuesta no JSON recibida al cargar empleados:', text);
+        throw new Error('Respuesta no válida del servidor');
+      }
+    if (!Array.isArray(data)) throw new Error('Formato inesperado');
+    empleadosCache = data;
+    tbody.innerHTML = empleadosCache.map(rowHtml).join('') || '<tr><td colspan="8">Sin registros</td></tr>';
+      tbody.querySelectorAll('tr').forEach(bindRowActions);
+
+    // Poblar datalists a partir de los empleados cargados
+    setDatalist(document.getElementById('lista-departamentos'), empleadosCache.map(e => e.departamento || ''));
+    setDatalist(document.getElementById('lista-turnos'), empleadosCache.map(e => e.turno || ''));
+    // Estados comunes; si hay en DB, usarlos, si no, defaults
+    const estadosDb = Array.from(new Set(empleadosCache.map(e => e.estado).filter(Boolean)));
+    const defaultsEstado = ['activo','inactivo','vacaciones','licencia'];
+    setDatalist(document.getElementById('lista-estados'), estadosDb.length ? estadosDb : defaultsEstado);
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8">${e.message || 'Error al cargar'}</td></tr>`;
+      console.error(e);
+    }
+  }
+
+  // Crear/Actualizar
+  if (empleadoForm) {
+    empleadoForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('empleado-id').value;
+      const payload = {
+        nombre: document.getElementById('empleado-nombre').value.trim(),
+        correo: document.getElementById('empleado-email').value.trim().toLowerCase(),
+        telefono: document.getElementById('empleado-telefono').value.trim(),
+        departamento: document.getElementById('empleado-departamento').value,
+        posicion: document.getElementById('empleado-posicion').value.trim(),
+        turno: document.getElementById('empleado-turno').value,
+        salario: parseFloat(document.getElementById('empleado-salario').value) || 0,
+        estado: document.getElementById('empleado-estado').value,
+        direccion: document.getElementById('empleado-direccion').value.trim()
+      };
+      if (!id) {
+        payload.usuario = document.getElementById('empleado-usuario').value.trim();
+        payload.contrasena = document.getElementById('empleado-contrasena').value.trim();
+        payload.rol_id = Number(document.getElementById('empleado-rol').value) || 1;
+      }
+      const res = await fetch(id ? `/api/empleados/${id}` : '/api/empleados', {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        await loadEmpleados();
+        if (modal) modal.style.display = 'none';
+      } else {
+        let msg = 'No se pudo guardar';
+        try { const t = await res.text(); msg = (JSON.parse(t).message || t || msg); } catch {}
+        if (res.status === 409) {
+          alert(msg || 'El correo ya está registrado');
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
+
+  // Abrir modal crear
+  if (addEmpleadoBtn) {
+    addEmpleadoBtn.addEventListener('click', () => {
+      document.getElementById('modal-titulo-empleado').textContent = 'Agregar Empleado';
+      document.getElementById('empleado-id').value = '';
+      empleadoForm?.reset();
+      // Habilitar campos de credenciales al crear
+      document.getElementById('empleado-usuario').disabled = false;
+      document.getElementById('empleado-contrasena').disabled = false;
+    document.getElementById('empleado-rol').disabled = false;
+    // Asegurar roles cargados
+    loadRoles();
+      if (modal) modal.style.display = 'block';
+    });
+  }
+
+  function bindRowActions(tr) {
+    const id = tr.getAttribute('data-id');
+    tr.querySelector('.btn-editar')?.addEventListener('click', async () => {
+      const res = await fetch(`/api/empleados/${id}`);
+      if (!res.ok) return alert('No se pudo cargar el empleado');
+      const empText = await res.text();
+      let emp;
+      try { emp = JSON.parse(empText); } catch { return alert('Respuesta no válida del servidor'); }
+      document.getElementById('modal-titulo-empleado').textContent = 'Editar Empleado';
+      document.getElementById('empleado-id').value = emp.id;
+      document.getElementById('empleado-nombre').value = emp.nombre || '';
+      document.getElementById('empleado-email').value = emp.correo || '';
+      document.getElementById('empleado-telefono').value = emp.telefono || '';
+      document.getElementById('empleado-departamento').value = emp.departamento || '';
+      document.getElementById('empleado-posicion').value = emp.posicion || '';
+      document.getElementById('empleado-turno').value = emp.turno || '';
+      document.getElementById('empleado-salario').value = emp.salario || 0;
+      document.getElementById('empleado-estado').value = emp.estado || 'activo';
+      document.getElementById('empleado-direccion').value = emp.direccion || '';
+      // Deshabilitar credenciales al editar (no se editan aquí)
+      document.getElementById('empleado-usuario').disabled = true;
+      document.getElementById('empleado-contrasena').disabled = true;
+      document.getElementById('empleado-rol').disabled = true;
+      if (modal) modal.style.display = 'block';
     });
     
-    // Enviar formulario
-    if (empleadoForm) {
-        empleadoForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            // Aquí iría la lógica para guardar el empleado
-            alert('Empleado guardado correctamente');
-            if (modal) modal.style.display = 'none';
-        });
+    tr.querySelector('.btn-eliminar')?.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar empleado?')) return;
+      const res = await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        tr.remove();
+      } else {
+        alert('No se pudo eliminar');
+      }
+    });
+  }
+
+  async function loadEmpleados() {
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8">Cargando...</td></tr>';
+    try {
+      const res = await fetch('/api/empleados');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Respuesta no JSON recibida al cargar empleados:', text);
+        throw new Error('Respuesta no válida del servidor');
+      }
+      if (!Array.isArray(data)) throw new Error('Formato inesperado');
+      tbody.innerHTML = data.map(rowHtml).join('') || '<tr><td colspan="8">Sin registros</td></tr>';
+      tbody.querySelectorAll('tr').forEach(bindRowActions);
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8">${e.message || 'Error al cargar'}</td></tr>`;
+      console.error(e);
     }
-    
-    // Botones de editar
-    const editButtons = document.querySelectorAll('.btn-editar');
-    editButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const empleadoId = btn.getAttribute('data-id');
-            document.getElementById('modal-titulo-empleado').textContent = 'Editar Empleado';
-            document.getElementById('empleado-id').value = empleadoId;
-            
-            // Aquí iría la lógica para cargar los datos del empleado
-            // Simulamos datos de ejemplo
-            document.getElementById('empleado-nombre').value = 'María González';
-            document.getElementById('empleado-email').value = 'maria@restaurante.com';
-            document.getElementById('empleado-telefono').value = '555-1234';
-            document.getElementById('empleado-departamento').value = 'meseros';
-            document.getElementById('empleado-posicion').value = 'Mesera';
-            document.getElementById('empleado-turno').value = 'vespertino';
-            document.getElementById('empleado-salario').value = '1200.00';
-            document.getElementById('empleado-estado').value = 'activo';
-            document.getElementById('empleado-direccion').value = 'Calle Principal #123';
-            
-            if (modal) modal.style.display = 'block';
-        });
+  }
+
+  // Crear/Actualizar
+  if (empleadoForm) {
+    empleadoForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('empleado-id').value;
+      const payload = {
+        nombre: document.getElementById('empleado-nombre').value.trim(),
+        correo: document.getElementById('empleado-email').value.trim().toLowerCase(),
+        telefono: document.getElementById('empleado-telefono').value.trim(),
+        departamento: document.getElementById('empleado-departamento').value,
+        posicion: document.getElementById('empleado-posicion').value.trim(),
+        turno: document.getElementById('empleado-turno').value,
+        salario: parseFloat(document.getElementById('empleado-salario').value) || 0,
+        estado: document.getElementById('empleado-estado').value,
+        direccion: document.getElementById('empleado-direccion').value.trim()
+      };
+      if (!id) {
+        payload.usuario = document.getElementById('empleado-usuario').value.trim();
+        payload.contrasena = document.getElementById('empleado-contrasena').value.trim();
+        payload.rol_id = Number(document.getElementById('empleado-rol').value) || 1;
+      }
+      const res = await fetch(id ? `/api/empleados/${id}` : '/api/empleados', {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        await loadEmpleados();
+        if (modal) modal.style.display = 'none';
+      } else {
+        let msg = 'No se pudo guardar';
+        try { const t = await res.text(); msg = (JSON.parse(t).message || t || msg); } catch {}
+        if (res.status === 409) {
+          alert(msg || 'El correo ya está registrado');
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
+
+  // Abrir modal crear
+  if (addEmpleadoBtn) {
+    addEmpleadoBtn.addEventListener('click', () => {
+      document.getElementById('modal-titulo-empleado').textContent = 'Agregar Empleado';
+      document.getElementById('empleado-id').value = '';
+      empleadoForm?.reset();
+      // Habilitar campos de credenciales al crear
+      document.getElementById('empleado-usuario').disabled = false;
+      document.getElementById('empleado-contrasena').disabled = false;
+      document.getElementById('empleado-rol').disabled = false;
+      if (modal) modal.style.display = 'block';
+    });
+  }
+
+  function bindRowActions(tr) {
+    const id = tr.getAttribute('data-id');
+    tr.querySelector('.btn-editar')?.addEventListener('click', async () => {
+      const res = await fetch(`/api/empleados/${id}`);
+      if (!res.ok) return alert('No se pudo cargar el empleado');
+      const empText = await res.text();
+      let emp;
+      try { emp = JSON.parse(empText); } catch { return alert('Respuesta no válida del servidor'); }
+      document.getElementById('modal-titulo-empleado').textContent = 'Editar Empleado';
+      document.getElementById('empleado-id').value = emp.id;
+      document.getElementById('empleado-nombre').value = emp.nombre || '';
+      document.getElementById('empleado-email').value = emp.correo || '';
+      document.getElementById('empleado-telefono').value = emp.telefono || '';
+      document.getElementById('empleado-departamento').value = emp.departamento || '';
+      document.getElementById('empleado-posicion').value = emp.posicion || '';
+      document.getElementById('empleado-turno').value = emp.turno || '';
+      document.getElementById('empleado-salario').value = emp.salario || 0;
+      document.getElementById('empleado-estado').value = emp.estado || 'activo';
+      document.getElementById('empleado-direccion').value = emp.direccion || '';
+      // Deshabilitar credenciales al editar (no se editan aquí)
+      document.getElementById('empleado-usuario').disabled = true;
+      document.getElementById('empleado-contrasena').disabled = true;
+      document.getElementById('empleado-rol').disabled = true;
+      if (modal) modal.style.display = 'block';
     });
     
-    // Botones de eliminar
-    const deleteButtons = document.querySelectorAll('.btn-eliminar');
-    deleteButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const empleadoId = btn.getAttribute('data-id');
-            if (confirm(`¿Estás seguro de que quieres eliminar al empleado ${empleadoId}?`)) {
-                // Aquí iría la lógica para eliminar el empleado
-                alert(`Empleado ${empleadoId} eliminado correctamente`);
-            }
-        });
+    tr.querySelector('.btn-eliminar')?.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar empleado?')) return;
+      const res = await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        tr.remove();
+      } else {
+        alert('No se pudo eliminar');
+      }
     });
-    
-    // Búsqueda y filtros
-    const searchInput = document.getElementById('buscar-empleado');
-    const deptoFilter = document.getElementById('filtro-departamento');
-    const estadoFilter = document.getElementById('filtro-estado');
-    const turnoFilter = document.getElementById('filtro-turno');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', aplicarFiltrosEmpleados);
+  }
+
+  async function loadEmpleados() {
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8">Cargando...</td></tr>';
+    try {
+      const res = await fetch('/api/empleados');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Respuesta no JSON recibida al cargar empleados:', text);
+        throw new Error('Respuesta no válida del servidor');
+      }
+      if (!Array.isArray(data)) throw new Error('Formato inesperado');
+      tbody.innerHTML = data.map(rowHtml).join('') || '<tr><td colspan="8">Sin registros</td></tr>';
+      tbody.querySelectorAll('tr').forEach(bindRowActions);
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8">${e.message || 'Error al cargar'}</td></tr>`;
+      console.error(e);
     }
-    
-    if (deptoFilter) {
-        deptoFilter.addEventListener('change', aplicarFiltrosEmpleados);
-    }
-    
-    if (estadoFilter) {
-        estadoFilter.addEventListener('change', aplicarFiltrosEmpleados);
-    }
-    
-    if (turnoFilter) {
-        turnoFilter.addEventListener('change', aplicarFiltrosEmpleados);
-    }
-    
-    function aplicarFiltrosEmpleados() {
-        // Aquí iría la lógica para filtrar la tabla de empleados
-        console.log('Aplicando filtros de empleados...');
-    }
+  }
+
+  // Crear/Actualizar
+  if (empleadoForm) {
+    empleadoForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('empleado-id').value;
+      const payload = {
+        nombre: document.getElementById('empleado-nombre').value.trim(),
+        correo: document.getElementById('empleado-email').value.trim().toLowerCase(),
+        telefono: document.getElementById('empleado-telefono').value.trim(),
+        departamento: document.getElementById('empleado-departamento').value,
+        posicion: document.getElementById('empleado-posicion').value.trim(),
+        turno: document.getElementById('empleado-turno').value,
+        salario: parseFloat(document.getElementById('empleado-salario').value) || 0,
+        estado: document.getElementById('empleado-estado').value,
+        direccion: document.getElementById('empleado-direccion').value.trim()
+      };
+      if (!id) {
+        payload.usuario = document.getElementById('empleado-usuario').value.trim();
+        payload.contrasena = document.getElementById('empleado-contrasena').value.trim();
+        payload.rol_id = Number(document.getElementById('empleado-rol').value) || 1;
+      }
+      const res = await fetch(id ? `/api/empleados/${id}` : '/api/empleados', {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        await loadEmpleados();
+        if (modal) modal.style.display = 'none';
+      } else {
+        let msg = 'No se pudo guardar';
+        try { const t = await res.text(); msg = (JSON.parse(t).message || t || msg); } catch {}
+        if (res.status === 409) {
+          alert(msg || 'El correo ya está registrado');
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
+
+  // Abrir modal crear
+  if (addEmpleadoBtn) {
+    addEmpleadoBtn.addEventListener('click', () => {
+      document.getElementById('modal-titulo-empleado').textContent = 'Agregar Empleado';
+      document.getElementById('empleado-id').value = '';
+      empleadoForm?.reset();
+      // Habilitar campos de credenciales al crear
+      document.getElementById('empleado-usuario').disabled = false;
+      document.getElementById('empleado-contrasena').disabled = false;
+      document.getElementById('empleado-rol').disabled = false;
+      if (modal) modal.style.display = 'block';
+    });
+  }
+
+  // Cierre modal
+  closeModal?.addEventListener('click', () => (modal.style.display = 'none'));
+  cancelBtn?.addEventListener('click', () => (modal.style.display = 'none'));
+  window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+  // Cargar inicial
+    loadEmpleados();
+    loadRoles();
 }
 
 // ============================
@@ -2109,7 +2355,6 @@ window.addEventListener('unhandledrejection', function(e) {
 
 // Hacer funciones disponibles globalmente
 window.loadView = loadView;
-window.toggleSidebar = toggleSidebar;
 
 // Exportar para uso en otros módulos si es necesario
 if (typeof module !== 'undefined' && module.exports) {
@@ -2416,6 +2661,3 @@ function initReportesView() {
         alert(`Cambiando a vista ${tipo} del gráfico`);
     }
 }
-
-// Asegurar que la función esté disponible globalmente
-window.initReportesView = initReportesView;

@@ -12,7 +12,7 @@
             <div class="filtros-group">
                 <div class="filtro-item">
                     <label for="filtro-fecha">Fecha:</label>
-                    <input type="date" id="filtro-fecha" class="form-input" value="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" id="filtro-fecha" class="form-input" value="">
                 </div>
                 
                 <div class="filtro-item">
@@ -44,7 +44,7 @@
                 <button class="btn btn-outline" id="btn-dia-anterior">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                <span id="fecha-actual" class="fecha-display"><?php echo date('d/m/Y'); ?></span>
+                <span id="fecha-actual" class="fecha-display"></span>
                 <button class="btn btn-outline" id="btn-dia-siguiente">
                     <i class="fas fa-chevron-right"></i>
                 </button>
@@ -165,7 +165,7 @@
 
             <!-- Lista de reservaciones -->
             <div class="lista-reservaciones">
-                <h3>Reservaciones para <span id="fecha-lista"><?php echo date('d/m/Y'); ?></span></h3>
+                <h3>Reservaciones para <span id="fecha-lista"></span></h3>
                 
                 <div class="reservaciones-list">
                     <!-- Reservación 1 -->
