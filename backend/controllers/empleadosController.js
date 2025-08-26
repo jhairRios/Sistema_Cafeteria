@@ -44,6 +44,15 @@ exports.create = async (req, res) => {
     const pwd = contrasena || '1234';
     const rolId = Number.isFinite(Number(rol_id)) ? Number(rol_id) : 1; // por defecto 1
 
+    // Pre-chequeo para correo duplicado (mejor UX, evita lanzar excepción de SQL)
+    const [exists] = await pool.execute(
+      'SELECT id FROM empleados WHERE correo = ? LIMIT 1',
+      [correoNorm]
+    );
+    if (Array.isArray(exists) && exists.length) {
+      return res.status(409).json({ message: 'El correo ya está registrado', field: 'correo' });
+    }
+
     const [result] = await pool.execute(
       `INSERT INTO empleados (nombre, usuario, correo, contrasena, rol_id, telefono, departamento, posicion, turno, salario, estado, direccion)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -57,8 +66,16 @@ exports.create = async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
-      return res.status(409).json({ message: 'El correo ya está registrado' });
+    // Manejo robusto de duplicados por si el índice único lanza error
+    const dup = err && (
+      err.code === 'ER_DUP_ENTRY' || err.errno === 1062 ||
+      (typeof err.message === 'string' && /duplicate entry/i.test(err.message))
+    );
+    if (dup) {
+      // Intentar extraer la clave en conflicto del mensaje de MySQL
+      const keyMatch = typeof err.message === 'string' && err.message.match(/for key '([^']+)'/i);
+      const conflictKey = keyMatch ? keyMatch[1] : 'correo';
+      return res.status(409).json({ message: 'El correo ya está registrado', field: conflictKey });
     }
     console.error('create empleado error:', err);
     res.status(500).json({ message: 'Error al crear el empleado' });
@@ -71,6 +88,17 @@ exports.update = async (req, res) => {
   try {
     const pool = getPool();
     const correoNorm = correo != null ? String(correo).trim().toLowerCase() : null;
+
+    // Si viene correo, validar que no exista en otro registro
+    if (correoNorm) {
+      const [exists] = await pool.execute(
+        'SELECT id FROM empleados WHERE correo = ? AND id <> ? LIMIT 1',
+        [correoNorm, id]
+      );
+      if (Array.isArray(exists) && exists.length) {
+        return res.status(409).json({ message: 'El correo ya está registrado', field: 'correo' });
+      }
+    }
     await pool.execute(
       `UPDATE empleados SET nombre = ?, correo = ?, telefono = ?, departamento = ?, posicion = ?, turno = ?, salario = ?, estado = ?, direccion = ?
        WHERE id = ?`,
@@ -84,8 +112,14 @@ exports.update = async (req, res) => {
     if (!rows.length) return res.status(404).json({ message: 'Empleado no encontrado' });
     res.json(rows[0]);
   } catch (err) {
-    if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
-      return res.status(409).json({ message: 'El correo ya está registrado' });
+    const dup = err && (
+      err.code === 'ER_DUP_ENTRY' || err.errno === 1062 ||
+      (typeof err.message === 'string' && /duplicate entry/i.test(err.message))
+    );
+    if (dup) {
+      const keyMatch = typeof err.message === 'string' && err.message.match(/for key '([^']+)'/i);
+      const conflictKey = keyMatch ? keyMatch[1] : 'correo';
+      return res.status(409).json({ message: 'El correo ya está registrado', field: conflictKey });
     }
     console.error('update empleado error:', err);
     res.status(500).json({ message: 'Error al actualizar el empleado' });
