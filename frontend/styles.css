@@ -17,7 +17,7 @@
   14) PRODUCTOS
   15) MODALES (incluye modal Empleado)
   16) VENTA RÁPIDA
-  17) RESERVACIONES
+  
   18) AJUSTES
   19) REPORTES
   20) RESPONSIVE
@@ -122,10 +122,7 @@
   --mesas-header-text: var(--page-header-text);
   --mesas-header-accent: var(--page-header-accent);
 
-  --reservaciones-header-bg-start: var(--page-header-bg-start);
-  --reservaciones-header-bg-end: var(--page-header-bg-end);
-  --reservaciones-header-text: var(--page-header-text);
-  --reservaciones-header-accent: var(--page-header-accent);
+  
 
   --reportes-header-bg-start: var(--page-header-bg-start);
   --reportes-header-bg-end: var(--page-header-bg-end);
@@ -828,8 +825,7 @@ textarea:focus {
 /* Anchos consistentes en grupos de filtros para el wrapper */
 .productos-container .filtros-group .select-enhanced,
 .mesas-container .filtros-group .select-enhanced,
-.empleados-container .filtros-group .select-enhanced,
-.reservaciones-container .filtros-group .select-enhanced {
+.empleados-container .filtros-group .select-enhanced {
   width: 220px;
   max-width: 100%;
   flex: 0 0 220px;
@@ -1052,9 +1048,6 @@ tr:hover {
   border-left: 4px solid #dc3545;
 }
 
-.mesa-reservada {
-  border-left: 4px solid #ffc107;
-}
 
 .mesa-numero {
   font-size: 1.2rem;
@@ -1075,15 +1068,13 @@ tr:hover {
   color: #28a745;
 }
 
-.estado-ocupado {
+.estado-ocupado,
+.estado-ocupada {
   background-color: #fde8e8;
   color: #dc3545;
 }
 
-.estado-reservado {
-  background-color: #fff4e0;
-  color: #e0a800;
-}
+/* */
 
 .mesa-usuario,
 .mesa-horario {
@@ -1091,6 +1082,20 @@ tr:hover {
   color: #666;
   margin-top: 0.5rem;
 }
+
+/* Acciones dentro de tarjetas de mesa */
+.mesa-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+.mesa-actions .btn {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+.mesa-actions .btn i { font-size: 0.85rem; }
 
 /* ============================
    PRODUCTOS
@@ -1234,8 +1239,7 @@ tr:hover {
 
 /* Alinear filtros en otras vistas igual que Productos */
 .mesas-container .filtros-container,
-.empleados-container .filtros-container,
-.reservaciones-container .filtros-container {
+.empleados-container .filtros-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1244,8 +1248,7 @@ tr:hover {
 }
 
 .mesas-container .filtros-group,
-.empleados-container .filtros-group,
-.reservaciones-container .filtros-group {
+.empleados-container .filtros-group {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1254,8 +1257,7 @@ tr:hover {
 }
 
 .mesas-container .filtros-group .form-select,
-.empleados-container .filtros-group .form-select,
-.reservaciones-container .filtros-group .form-select {
+.empleados-container .filtros-group .form-select {
   width: 220px;
   max-width: 100%;
   flex: 0 0 220px;
@@ -1263,18 +1265,15 @@ tr:hover {
 
 @media (max-width: 600px) {
   .mesas-container .filtros-container,
-  .empleados-container .filtros-container,
-  .reservaciones-container .filtros-container {
+  .empleados-container .filtros-container {
     flex-wrap: wrap; /* apilan en móvil */
   }
   .mesas-container .filtros-group,
-  .empleados-container .filtros-group,
-  .reservaciones-container .filtros-group {
+  .empleados-container .filtros-group {
     flex-wrap: wrap;
   }
   .mesas-container .filtros-group .form-select,
-  .empleados-container .filtros-group .form-select,
-  .reservaciones-container .filtros-group .form-select {
+  .empleados-container .filtros-group .form-select {
     width: 100%;
     flex: 1 1 100%;
   }
@@ -1760,212 +1759,7 @@ tr:hover {
   min-height: 0; /* permite que el hijo flex pueda hacer scroll */
 }
 
-/* ============================
-   RESERVACIONES
-   ============================ */
-.reservaciones-container {
-  max-width: 1800px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.timeline-reservaciones {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-}
-
-/* Encabezado de página */
-.reservaciones-container .page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.reservaciones-container .page-header h1 {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0;
-  border: 0;
-}
-
-/* Barra de filtros y controles del día */
-.reservaciones-container .filtros-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 1rem;
-}
-
-.reservaciones-container .filtros-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.controles-dia {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.controles-dia .btn.btn-outline {
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #374151;
-}
-
-.fecha-display {
-  padding: 6px 10px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.reservacion-item {
-  background: white;
-  border-radius: 8px;
-  padding: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #28a745;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.reservacion-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Estados de reservación (borde y badge) */
-.reservacion-item.confirmada { border-left-color: #28a745; }
-.reservacion-item.pendiente { border-left-color: #ffc107; }
-.reservacion-item.completada { border-left-color: #9ca3af; }
-.reservacion-item.cancelada { border-left-color: #dc3545; }
-
-.reservacion-estado-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.reservacion-estado-badge.confirmada { background: #e8f7ee; color: #1e7e34; border: 1px solid #c8efd6; }
-.reservacion-estado-badge.pendiente { background: #fff7e6; color: #8a6d3b; border: 1px solid #ffe1a6; }
-.reservacion-estado-badge.completada { background: #eef2f7; color: #475569; border: 1px solid #e2e8f0; }
-.reservacion-estado-badge.cancelada { background: #fdecec; color: #a61b1b; border: 1px solid #f8c1c1; }
-
-/* Timeline de día */
-.timeline-header {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 12px;
-  color: #6b7280;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.timeline-hora { text-align: right; padding-right: 8px; }
-.timeline-mesas { padding-left: 8px; }
-
-.timeline-content {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 12px;
-}
-
-.timeline-horas {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-.timeline-hora-item {
-  height: 56px;
-  border-bottom: 1px dashed #e5e7eb;
-  text-align: right;
-  padding: 4px 8px 0 0;
-  color: #94a3b8;
-  font-size: 0.85rem;
-}
-
-.reservaciones-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 56px;
-  gap: 10px;
-  position: relative;
-}
-
-.reservacion-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.reservacion-acciones,
-.reservacion-actions {
-  display: flex;
-  gap: 6px;
-  justify-content: flex-end;
-  margin-top: 6px;
-}
-
-.btn.btn-sm {
-  padding: 6px 8px;
-  font-size: 0.8rem;
-  border-radius: 6px;
-}
-
-/* Lista de reservaciones */
-.lista-reservaciones { margin-top: 1rem; }
-.reservaciones-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-
-.reservacion-card {
-  background: #fff;
-  border: 1px solid #eef2f7;
-  border-left: 4px solid var(--color-primario);
-  border-radius: 10px;
-  padding: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.reservacion-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
-
-.reservacion-card.confirmada { border-left-color: #28a745; }
-.reservacion-card.pendiente { border-left-color: #ffc107; }
-.reservacion-card.completada { border-left-color: #9ca3af; }
-.reservacion-card.cancelada { border-left-color: #dc3545; }
-
-.reservacion-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.reservacion-hora { font-weight: 700; color: #111827; }
-.reservacion-body { color: #374151; }
-.reservacion-cliente { font-weight: 600; }
-.reservacion-details { display: flex; gap: 10px; flex-wrap: wrap; color: #6b7280; font-size: 0.92rem; }
-.reservacion-notas { margin-top: 6px; color: #6b7280; font-size: 0.9rem; }
-.reservacion-actions { margin-top: 8px; display: flex; gap: 8px; }
-
-/* Detalle modal acciones */
-.detalle-acciones { display: flex; gap: 10px; flex-wrap: wrap; }
-
-/* Responsive Reservaciones */
-@media (max-width: 900px) {
-  .timeline-header, .timeline-content { grid-template-columns: 70px 1fr; }
-  .timeline-hora-item { height: 52px; }
-  .reservaciones-grid { grid-auto-rows: 52px; }
-}
-
-@media (max-width: 600px) {
-  .reservaciones-container .filtros-container { flex-wrap: wrap; }
-  .reservaciones-container .filtros-group { flex-wrap: wrap; }
-  .controles-dia { width: 100%; justify-content: space-between; }
-  .reservaciones-grid { grid-template-columns: 1fr; }
-}
+/* */
 
 /* ============================
    AJUSTES
@@ -2427,12 +2221,7 @@ tr:hover {
 .mesas-container .page-header h1 { color: var(--mesas-header-text); }
 .mesas-container .page-header h1 i { color: var(--mesas-header-accent); }
 
-.reservaciones-container .page-header {
-  background: linear-gradient(135deg, var(--reservaciones-header-bg-start) 0%, var(--reservaciones-header-bg-end) 100%);
-  border-left-color: var(--reservaciones-header-accent);
-}
-.reservaciones-container .page-header h1 { color: var(--reservaciones-header-text); }
-.reservaciones-container .page-header h1 i { color: var(--reservaciones-header-accent); }
+/* */
 
 .reportes-container .page-header {
   background: linear-gradient(135deg, var(--reportes-header-bg-start) 0%, var(--reportes-header-bg-end) 100%);

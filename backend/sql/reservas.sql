@@ -1,0 +1,1 @@
+-- Archivo de SQL de Reservas eliminado. Mantener vacío.

@@ -4,6 +4,11 @@ import { enhanceAllSelects, refreshEnhancedSelect } from '../core/dom.js';
 
 export function initEmpleados() {
   console.log('Vista Empleados inicializada');
+  let permisos = [];
+  try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
+  const canCreate = permisos.includes('action.empleados.crud');
+  const canUpdate = permisos.includes('action.empleados.crud');
+  const canDelete = permisos.includes('action.empleados.crud');
 
   const tbody = document.querySelector('#tabla-empleados tbody');
   const modal = document.getElementById('modal-empleado');
@@ -11,6 +16,7 @@ export function initEmpleados() {
   const cancelBtn = document.getElementById('btn-cancelar-empleado');
   const empleadoForm = document.getElementById('form-empleado');
   const addEmpleadoBtn = document.getElementById('btn-agregar-empleado');
+  if (addEmpleadoBtn && !canCreate) addEmpleadoBtn.style.display = 'none';
   const rolSelect = document.getElementById('empleado-rol');
 
   let empleadosCache = [];
@@ -70,8 +76,8 @@ export function initEmpleados() {
         <td>${e.turno || ''}</td>
         <td><span class="badge ${estadoBadge}">${e.estado || ''}</span></td>
         <td class="acciones">
-          <button class="btn btn-sm btn-warning btn-editar" data-id="${e.id}"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger btn-eliminar" data-id="${e.id}"><i class="fas fa-trash"></i></button>
+          ${canUpdate ? `<button class="btn btn-sm btn-warning btn-editar" data-id="${e.id}"><i class="fas fa-edit"></i></button>` : ''}
+          ${canDelete ? `<button class="btn btn-sm btn-danger btn-eliminar" data-id="${e.id}"><i class="fas fa-trash"></i></button>` : ''}
           <button class="btn btn-sm btn-info btn-ver" data-id="${e.id}"><i class="fas fa-eye"></i></button>
         </td>
       </tr>`;
@@ -123,6 +129,10 @@ export function initEmpleados() {
       // Poblar datalists
       setDatalist(document.getElementById('lista-departamentos'), empleadosCache.map(e => e.departamento || ''));
       setDatalist(document.getElementById('lista-turnos'), empleadosCache.map(e => e.turno || ''));
+      try {
+        const cargos = await api.get('/api/catalogos/cargos');
+        setDatalist(document.getElementById('lista-cargos'), cargos.map(c => c.nombre));
+      } catch(_) {}
       const estadosDb = Array.from(new Set(empleadosCache.map(e => e.estado).filter(Boolean)));
       const defaultsEstado = ['activo','inactivo','vacaciones','licencia'];
       setDatalist(document.getElementById('lista-estados'), estadosDb.length ? estadosDb : defaultsEstado);
@@ -206,6 +216,7 @@ export function initEmpleados() {
   });
 
   addEmpleadoBtn?.addEventListener('click', async () => {
+    if (!canCreate) return;
     document.getElementById('modal-titulo-empleado').textContent = 'Agregar Empleado';
     document.getElementById('empleado-id').value = '';
     empleadoForm?.reset();

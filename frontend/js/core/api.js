@@ -31,12 +31,19 @@ export const api = {
   get: (url, opts) => http('GET', url, null, opts),
   post: (url, body, opts) => http('POST', url, body, opts),
   put: (url, body, opts) => http('PUT', url, body, opts),
+  patch: (url, body, opts) => http('PATCH', url, body, opts),
   del: (url, opts) => http('DELETE', url, null, opts),
 };
 
 // Endpoints específicos
 export const Roles = {
   all: () => api.get('/api/roles'),
+  get: (id) => api.get(`/api/roles/${id}`),
+  create: (payload) => api.post('/api/roles', payload),
+  update: (id, payload) => api.put(`/api/roles/${id}`, payload),
+  remove: (id) => api.del(`/api/roles/${id}`),
+  getPermisos: (id) => api.get(`/api/roles/${id}/permisos`),
+  setPermisos: (id, permisos) => api.post(`/api/roles/${id}/permisos`, { permisos }),
 };
 
 export const Empleados = {
@@ -45,4 +52,13 @@ export const Empleados = {
   create: (payload) => api.post('/api/empleados', payload),
   update: (id, payload) => api.put(`/api/empleados/${id}`, payload),
   remove: (id) => api.del(`/api/empleados/${id}`),
+};
+
+export const Mesas = {
+  list: () => api.get('/api/mesas'),
+  create: (payload) => api.post('/api/mesas', payload),
+  update: (id, payload) => api.put(`/api/mesas/${id}`, payload),
+  remove: (id) => api.del(`/api/mesas/${id}`),
+  setEstado: (id, estado, detalle) => api.patch(`/api/mesas/${id}/estado`, { estado, detalle }),
+  bulkGenerate: (payload) => api.post('/api/mesas/bulk-generate', payload),
 };

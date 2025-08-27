@@ -8,7 +8,7 @@
     [1] Bootstrapping y UI global (header, dropdown de usuario, sidebar, overlay)
     [2] Configuración de navegación (listeners y estado activo)
     [3] Sistema de vistas (loadView, executeViewScripts)
-    [4] Vistas: Home, Productos, Empleados, Venta Rápida, Mesas, Reservaciones, Ajustes, Reportes
+    [4] Vistas: Home, Productos, Empleados, Venta Rápida, Mesas, Ajustes, Reportes
     [5] Manejo de errores globales (window.error, unhandledrejection)
     [6] Exposición de funciones globales (browser) y export (CommonJS)
 
@@ -30,237 +30,65 @@
 // Gestión de usuario
 document.addEventListener('DOMContentLoaded', function() {
     // Header: nombre de usuario
-    document.getElementById('user-name').textContent = localStorage.getItem('nombreUsuario') || 'Usuario';
+    try {
+        document.getElementById('user-name').textContent = (sessionStorage.getItem('nombreUsuario') || 'Usuario');
+    } catch (_) {}
     
     // Dropdown usuario
     const userDropdownBtn = document.getElementById('userDropdownBtn');
     const userDropdown = document.getElementById('userDropdown');
-    
     if (userDropdownBtn && userDropdown) {
         userDropdownBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             userDropdown.classList.toggle('open');
         });
-        
         document.addEventListener('click', function(e) {
             if (!userDropdown.contains(e.target)) {
                 userDropdown.classList.remove('open');
             }
         });
     }
-    
-    // Opciones del menú
+
     const verPerfilBtn = document.getElementById('verPerfilBtn');
     const cerrarSesionBtn = document.getElementById('cerrarSesionBtn');
-    
-    if (verPerfilBtn) {
-        verPerfilBtn.onclick = function() {
-            alert('Ver perfil (implementa la lógica aquí)');
-        };
-    }
-    
-    if (cerrarSesionBtn) {
-        cerrarSesionBtn.onclick = function() {
-            localStorage.removeItem('logueado');
-            window.location.href = 'login.html';
-        };
-    }
-    
-    // Sidebar responsive
-    const sidebar = document.getElementById('sidebarNav');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    const menuToggle = document.getElementById('menu-toggle');
-    const menuToggleHeader = document.getElementById('menu-toggle-header');
-    
-    // Función para abrir el sidebar
-    function openSidebar() {
-        if (sidebar) sidebar.classList.add('open');
-        if (sidebarOverlay) sidebarOverlay.classList.add('open');
-        if (menuToggle) menuToggle.classList.add('active');
-        if (menuToggleHeader) menuToggleHeader.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    // Función para cerrar el sidebar
-    function closeSidebar() {
-        if (sidebar) sidebar.classList.remove('open');
-        if (sidebarOverlay) sidebarOverlay.classList.remove('open');
-        if (menuToggle) menuToggle.classList.remove('active');
-        if (menuToggleHeader) menuToggleHeader.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    
-    // Función para toggle del sidebar (colapsar/expandir)
-    function toggleSidebar() {
-        if (window.innerWidth <= 600) {
-            // En móviles: abrir/cerrar menú
-            if (sidebar.classList.contains('open')) {
-                closeSidebar();
-            } else {
-                openSidebar();
-            }
-        } else {
-            // En tablets y escritorio: colapsar/expandir menú
-            if (sidebar) sidebar.classList.toggle('collapsed');
-            if (menuToggle) menuToggle.classList.toggle('active');
-        }
-    }
-    
-    // Event listeners para los botones de hamburguesa
-    if (menuToggle) {
-        menuToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleSidebar();
-        });
-    }
-    
-    if (menuToggleHeader) {
-        menuToggleHeader.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleSidebar();
-        });
-    }
-    
-    // Cerrar sidebar al hacer clic en el overlay
-    if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', closeSidebar);
-    }
-    
-    // Ajustar el menú al cambiar el tamaño de la ventana
-    function handleResize() {
-        if (window.innerWidth > 600) {
-            // En pantallas más grandes, asegurarse de que el menú esté visible
-            if (sidebar) sidebar.classList.remove('open');
-            if (sidebarOverlay) sidebarOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-            
-            if (window.innerWidth <= 1024) {
-                // Tablets: menú colapsado por defecto
-                if (sidebar) sidebar.classList.add('collapsed');
-                if (menuToggle) menuToggle.classList.add('active');
-            } else {
-                // Escritorio: menú expandido por defecto
-                if (sidebar) sidebar.classList.remove('collapsed');
-                if (menuToggle) menuToggle.classList.remove('active');
-            }
-        } else {
-            // En móviles: menú cerrado por defecto
-            if (sidebar) sidebar.classList.remove('collapsed');
-            closeSidebar();
-        }
-    }
-    
-    // Inicializar el estado del menú según el tamaño de pantalla
-    handleResize();
-    
-    // Escuchar cambios de tamaño de ventana
-    window.addEventListener('resize', handleResize);
-    
-    // Configurar event listeners para los botones de navegación
-    setupNavigationListeners();
-    
-    // Cargar vista inicial
-    loadView('home');
-    
-    // Marcar el botón de inicio como activo
-    const homeButton = document.querySelector('.nav-btn[data-view="home"]');
-    if (homeButton) {
-        homeButton.classList.add('active');
-    }
-    // Exponer toggleSidebar globalmente cuando ya está definido en este scope
-    window.toggleSidebar = toggleSidebar;
+    if (verPerfilBtn) verPerfilBtn.onclick = () => alert('Ver perfil');
+    if (cerrarSesionBtn) cerrarSesionBtn.onclick = () => {
+        try {
+            sessionStorage.removeItem('logueado');
+            sessionStorage.removeItem('nombreUsuario');
+            localStorage.setItem('forceLogout', Date.now().toString());
+            setTimeout(() => localStorage.removeItem('forceLogout'), 0);
+        } catch (_) {}
+        window.location.href = 'login.html';
+    };
 });
 
 // ============================
-// CONFIGURACIÓN DE NAVEGACIÓN
+// Sistema de vistas SPA
 // ============================
-
-function setupNavigationListeners() {
-    // Configurar event listeners para todos los botones de navegación
-    const navButtons = document.querySelectorAll('.nav-btn');
-    
-    navButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const viewName = this.getAttribute('data-view');
-            if (viewName) {
-                // Remover clase active de todos los botones
-                navButtons.forEach(btn => btn.classList.remove('active'));
-                
-                // Agregar clase active al botón clickeado
-                this.classList.add('active');
-                
-                // Cargar la vista correspondiente
-                loadView(viewName);
-                
-                // Cerrar el menú en móviles después de seleccionar una opción
-                if (window.innerWidth <= 600) {
-                    const sidebar = document.getElementById('sidebarNav');
-                    const sidebarOverlay = document.getElementById('sidebarOverlay');
-                    
-                    if (sidebar) sidebar.classList.remove('open');
-                    if (sidebarOverlay) sidebarOverlay.classList.remove('open');
-                    document.body.style.overflow = '';
-                }
-            }
-        });
-    });
-}
-
-// ============================
-// SISTEMA DE VISTAS
-// ============================
-
-// Cargar vistas desde archivos externos
 async function loadView(viewName) {
-    const mainContent = document.getElementById('main-content');
-    
+    const main = document.getElementById('main-content');
+    if (!main) return;
     try {
-        // Mostrar indicador de carga
-        mainContent.innerHTML = `
-            <div class="content-box" style="text-align: center; padding: 2rem;">
-                <div style="font-size: 2rem; margin-bottom: 1rem;">
-                    <i class="fas fa-spinner fa-spin"></i>
-                </div>
-                <p>Cargando ${viewName}...</p>
-            </div>
-        `;
-        
-        // Hacer la petición para cargar la vista
-        const response = await fetch(`views/${viewName}.html`);
-        
-        if (!response.ok) {
-            throw new Error(`Error al cargar la vista: ${response.status}`);
-        }
-        
-        const html = await response.text();
-        
-    // Insertar el contenido en el área principal
-        mainContent.innerHTML = html;
-        
-        // Ejecutar scripts específicos para cada vista
+        const res = await fetch(`views/${viewName}.html`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const html = await res.text();
+        main.innerHTML = html;
         executeViewScripts(viewName);
-
-    // Mejorar selects nativos con dropdown custom
-    enhanceAllSelects(mainContent);
-        
+        enhanceAllSelects(main);
     } catch (error) {
         console.error('Error:', error);
-        mainContent.innerHTML = `
+        main.innerHTML = `
             <div class="content-box">
                 <h1>Error</h1>
                 <p>No se pudo cargar la vista: ${viewName}</p>
                 <p>${error.message}</p>
-                <button class="btn btn-primary" onclick="loadView('home')">
-                    Volver al Inicio
-                </button>
+                <button class="btn btn-primary" onclick="loadView('home')">Volver al Inicio</button>
             </div>
         `;
     }
 }
 
-// Función para ejecutar scripts específicos de cada vista
 function executeViewScripts(viewName) {
     switch(viewName) {
         case 'home':
@@ -278,11 +106,11 @@ function executeViewScripts(viewName) {
         case 'mesas':
             initMesasView();
             break;
-        case 'reservaciones':
-            initReservacionesView();
-            break;
         case 'ajustes':
             initAjustesView();
+            break;
+        case 'reportes':
+            initReportesView?.();
             break;
         default:
             console.log(`Vista ${viewName} cargada, sin scripts específicos`);
@@ -405,7 +233,60 @@ function cssEscape(value) {
 
 function initHomeView() {
     console.log('Inicializando vista Home');
-    // Aquí puedes agregar lógica específica para el dashboard
+    const grid = document.getElementById('home-grid-mesas');
+    const elDisp = document.getElementById('home-mesas-disponibles');
+    const elOc = document.getElementById('home-mesas-ocupadas');
+    // elRes eliminado
+
+    async function cargarMesas() {
+        try {
+            const resp = await fetch('/api/mesas');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            let mesas = await resp.json();
+            // Normalización de estado ya no necesaria; solo 'disponible' u 'ocupada'
+            // Respetar overrides locales (localStorage) para sincronizar con Mesas
+            try {
+                const overrides = JSON.parse(localStorage.getItem('mesasState') || '{}');
+                mesas = mesas.map(m => {
+                    const ov = overrides[m.id];
+                    if (ov && ov.estado) {
+                        const est = ov.estado;
+                        return { ...m, estado: est };
+                    }
+                    return m;
+                });
+            } catch (_) {}
+            if (grid) {
+                grid.innerHTML = mesas.map(m => {
+                    const estadoClase = m.estado === 'ocupada' ? 'mesa-ocupada' : 'mesa-disponible';
+                    const estadoBadge = m.estado === 'ocupada' ? '<div class="mesa-estado estado-ocupado">Ocupada</div>' : '<div class="mesa-estado estado-disponible">Disponible</div>';
+                    return `
+                        <div class="mesa-card ${estadoClase}" data-id="${m.id}" data-estado="${m.estado}" data-capacidad="${m.capacidad}">
+                            <div class="mesa-numero">Mesa ${m.numero}</div>
+                            ${estadoBadge}
+                        </div>
+                    `;
+                }).join('');
+            }
+            const disponibles = mesas.filter(m => m.estado === 'disponible').length;
+            const ocupadas = mesas.filter(m => m.estado === 'ocupada').length;
+            // 'reservadas' eliminado
+            if (elDisp) elDisp.textContent = String(disponibles);
+            if (elOc) elOc.textContent = String(ocupadas);
+            // elRes eliminado
+        } catch (e) {
+            console.error('No se pudieron cargar mesas:', e);
+            if (elDisp) elDisp.textContent = '—';
+            if (elOc) elOc.textContent = '—';
+            // elRes eliminado
+            if (grid) grid.innerHTML = '<div class="alert alert-warning">No se pudieron cargar las mesas</div>';
+        }
+    }
+
+    try {
+        window.addEventListener('mesasStateChanged', () => cargarMesas());
+    } catch (_) {}
+    cargarMesas();
 }
 
 // ============================
@@ -1408,10 +1289,10 @@ function initMesasView() {
     const btnAgregarMesa = document.getElementById('btn-agregar-mesa');
     const modalMesa = document.getElementById('modal-mesa');
     const modalOcupar = document.getElementById('modal-ocupar-mesa');
-    const modalReservar = document.getElementById('modal-reservar-mesa');
+    const modalReservar = null; // eliminado
     const formMesa = document.getElementById('form-mesa');
     const formOcupar = document.getElementById('form-ocupar-mesa');
-    const formReservar = document.getElementById('form-reservar-mesa');
+    const formReservar = null;
     const gridMesas = document.getElementById('grid-mesas');
     
     // Actualizar estadísticas
@@ -1420,7 +1301,7 @@ function initMesasView() {
         const total = mesas.length;
         const disponibles = document.querySelectorAll('.mesa-card.disponible').length;
         const ocupadas = document.querySelectorAll('.mesa-card.ocupada').length;
-        const reservadas = document.querySelectorAll('.mesa-card.reservada').length;
+    const reservadas = 0; // eliminado
         
         if (document.getElementById('total-mesas')) document.getElementById('total-mesas').textContent = total;
         if (document.getElementById('mesas-disponibles')) document.getElementById('mesas-disponibles').textContent = disponibles;
@@ -1458,13 +1339,13 @@ function initMesasView() {
     
     setupModalClose(modalMesa);
     setupModalClose(modalOcupar);
-    setupModalClose(modalReservar);
+    // modal reservar eliminado
     
     // Cerrar modales al hacer clic fuera
     window.addEventListener('click', (e) => {
         if (e.target === modalMesa) modalMesa.style.display = 'none';
         if (e.target === modalOcupar) modalOcupar.style.display = 'none';
-        if (e.target === modalReservar) modalReservar.style.display = 'none';
+    // modal reservar eliminado
     });
     
     // Enviar formulario de mesa
@@ -1497,6 +1378,10 @@ function initMesasView() {
         const state = getMesasState();
         state[mesaId] = { estado: nuevoEstado, datos };
         setMesasState(state);
+        // Notificar a otras vistas que el estado de mesas cambió (misma pestaña)
+        try {
+            window.dispatchEvent(new CustomEvent('mesasStateChanged', { detail: { mesaId, estado: nuevoEstado, datos } }));
+        } catch (_) {}
     }
 
     function applyMesaState(mesaId, nuevoEstado, datos = {}, options = { navigateOnOcupar: false }) {
@@ -1504,7 +1389,7 @@ function initMesasView() {
         if (!mesa) return;
 
         // Cambiar clases y dataset
-        mesa.classList.remove('disponible', 'ocupada', 'reservada');
+    mesa.classList.remove('disponible', 'ocupada');
         mesa.classList.add(nuevoEstado);
         mesa.dataset.estado = nuevoEstado;
 
@@ -1520,9 +1405,6 @@ function initMesasView() {
             mesa.querySelector('.mesa-acciones').innerHTML = `
                 <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
                     <i class="fas fa-play"></i> Ocupar
-                </button>
-                <button class="btn btn-sm btn-warning btn-reservar" data-id="${mesaId}">
-                    <i class="fas fa-calendar"></i> Reservar
                 </button>
             `;
         } else if (nuevoEstado === 'ocupada') {
@@ -1553,37 +1435,12 @@ function initMesasView() {
                 window.appState.currentMesa = { id: mesaId, cliente: datos.cliente || 'Cliente', personas: datos.personas || null };
                 if (typeof loadView === 'function') loadView('ventas-rapidas');
             }
-        } else if (nuevoEstado === 'reservada') {
-            estadoElement.classList.add('estado-reservada');
-            estadoElement.innerHTML = '<i class="fas fa-calendar-check"></i> Reservada';
-            if (!mesa.querySelector('.mesa-info')) {
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'mesa-info';
-                infoDiv.innerHTML = `
-                    <div class="mesa-cliente">${datos.cliente || 'Reserva'}</div>
-                    <div class="mesa-horario">${datos.hora || '19:30'} hrs</div>
-                `;
-                estadoElement.after(infoDiv);
-            } else {
-                const c = mesa.querySelector('.mesa-cliente');
-                const h = mesa.querySelector('.mesa-horario');
-                if (c && datos.cliente) c.textContent = datos.cliente;
-                if (h && datos.hora) h.textContent = `${datos.hora} hrs`;
-            }
-            mesa.querySelector('.mesa-acciones').innerHTML = `
-                <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}">
-                    <i class="fas fa-eye"></i> Ver
-                </button>
-                <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
-                    <i class="fas fa-play"></i> Ocupar
-                </button>
-            `;
-        }
+    }
 
         // Re-enlazar listeners de los botones generados
         setTimeout(() => {
             const newOcuparBtn = mesa.querySelector('.btn-ocupar');
-            const newReservarBtn = mesa.querySelector('.btn-reservar');
+            const newReservarBtn = null;
             const newCerrarBtn = mesa.querySelector('.btn-cerrar');
             const newVerBtn = mesa.querySelector('.btn-ver');
 
@@ -1594,13 +1451,7 @@ function initMesasView() {
                     if (modalOcupar) modalOcupar.style.display = 'block';
                 });
             }
-            if (newReservarBtn) {
-                newReservarBtn.addEventListener('click', () => {
-                    document.getElementById('mesa-reservar-id').value = mesaId;
-                    if (formReservar) formReservar.reset();
-                    if (modalReservar) modalReservar.style.display = 'block';
-                });
-            }
+            // reservar eliminado
             if (newCerrarBtn) {
                 newCerrarBtn.addEventListener('click', () => {
                     if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) {
@@ -1638,7 +1489,7 @@ function initMesasView() {
             const mesaId = btn.dataset.id;
             const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
             
-            if (mesa.dataset.estado === 'disponible' || mesa.dataset.estado === 'reservada') {
+            if (mesa.dataset.estado === 'disponible') {
                 document.getElementById('mesa-ocupar-id').value = mesaId;
                 if (formOcupar) formOcupar.reset();
                 if (modalOcupar) modalOcupar.style.display = 'block';
@@ -1667,42 +1518,10 @@ function initMesasView() {
     }
     
     // Botones de reservar mesa
-    const botonesReservar = document.querySelectorAll('.btn-reservar');
-    botonesReservar.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const mesaId = btn.dataset.id;
-            const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
-            
-            if (mesa.dataset.estado === 'disponible') {
-                document.getElementById('mesa-reservar-id').value = mesaId;
-                // Establecer fecha mínima como hoy
-                document.getElementById('reserva-fecha').min = new Date().toISOString().split('T')[0];
-                if (formReservar) formReservar.reset();
-                if (modalReservar) modalReservar.style.display = 'block';
-            }
-        });
-    });
+    // Botones reservar eliminados
     
     // Enviar formulario de reservar mesa
-    if (formReservar) {
-        formReservar.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const mesaId = document.getElementById('mesa-reservar-id').value;
-            const nombre = document.getElementById('reserva-nombre').value;
-            const fecha = document.getElementById('reserva-fecha').value;
-            const hora = document.getElementById('reserva-hora').value;
-            
-            // Cambiar estado de la mesa
-            cambiarEstadoMesa(mesaId, 'reservada', {
-                cliente: nombre,
-                fecha: fecha,
-                hora: hora
-            });
-            
-            if (modalReservar) modalReservar.style.display = 'none';
-            alert(`Mesa ${mesaId} reservada para ${nombre}`);
-        });
-    }
+    // Form reservar eliminado
     
     // Botones de cerrar mesa
     const botonesCerrar = document.querySelectorAll('.btn-cerrar');
@@ -1733,11 +1552,6 @@ function initMesasView() {
                 const tiempo = mesa.querySelector('.mesa-tiempo').textContent;
                 mensaje += `Cliente: ${cliente}\n`;
                 mensaje += `Tiempo: ${tiempo}\n`;
-            } else if (estado === 'reservada') {
-                const cliente = mesa.querySelector('.mesa-cliente').textContent;
-                const horario = mesa.querySelector('.mesa-horario').textContent;
-                mensaje += `Reserva: ${cliente}\n`;
-                mensaje += `Horario: ${horario}\n`;
             }
             
             alert(mensaje);
@@ -1747,7 +1561,7 @@ function initMesasView() {
     // Función para cambiar estado de mesa
     function cambiarEstadoMesa(mesaId, nuevoEstado, datos = {}) {
         const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
-        const estadoActual = mesa.dataset.estado;
+            const estadoActual = mesa.dataset.estado;
         
         if (estadoActual === nuevoEstado) return;
         
@@ -1756,7 +1570,7 @@ function initMesasView() {
         
         setTimeout(() => {
             // Cambiar clases CSS
-            mesa.classList.remove('disponible', 'ocupada', 'reservada');
+            mesa.classList.remove('disponible', 'ocupada');
             mesa.classList.add(nuevoEstado);
             mesa.dataset.estado = nuevoEstado;
             
@@ -1776,9 +1590,6 @@ function initMesasView() {
                     mesa.querySelector('.mesa-acciones').innerHTML = `
                         <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
                             <i class="fas fa-play"></i> Ocupar
-                        </button>
-                        <button class="btn btn-sm btn-warning btn-reservar" data-id="${mesaId}">
-                            <i class="fas fa-calendar"></i> Reservar
                         </button>
                     `;
                     saveMesaState(mesaId, 'disponible', {});
@@ -1815,36 +1626,13 @@ function initMesasView() {
                     }
                     break;
                     
-                case 'reservada':
-                    estadoElement.classList.add('estado-reservada');
-                    estadoElement.innerHTML = '<i class="fas fa-calendar-check"></i> Reservada';
-                    // Agregar información de reserva
-                    if (!mesa.querySelector('.mesa-info')) {
-                        const infoDiv = document.createElement('div');
-                        infoDiv.className = 'mesa-info';
-                        infoDiv.innerHTML = `
-                            <div class="mesa-cliente">${datos.cliente || 'Reserva'}</div>
-                            <div class="mesa-horario">${datos.hora || '19:30'} hrs</div>
-                        `;
-                        mesa.querySelector('.mesa-estado').after(infoDiv);
-                    }
-                    // Cambiar botones
-                    mesa.querySelector('.mesa-acciones').innerHTML = `
-                        <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}">
-                            <i class="fas fa-eye"></i> Ver
-                        </button>
-                        <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}">
-                            <i class="fas fa-play"></i> Ocupar
-                        </button>
-                    `;
-                    saveMesaState(mesaId, 'reservada', { cliente: datos.cliente || 'Reserva', hora: datos.hora || '19:30' });
-                    break;
+                // estado 'reservada' eliminado
             }
             
             // Actualizar event listeners de los nuevos botones
             setTimeout(() => {
                 const newOcuparBtn = mesa.querySelector('.btn-ocupar');
-                const newReservarBtn = mesa.querySelector('.btn-reservar');
+                const newReservarBtn = null;
                 const newCerrarBtn = mesa.querySelector('.btn-cerrar');
                 const newVerBtn = mesa.querySelector('.btn-ver');
                 
@@ -1856,13 +1644,7 @@ function initMesasView() {
                     });
                 }
                 
-                if (newReservarBtn) {
-                    newReservarBtn.addEventListener('click', () => {
-                        document.getElementById('mesa-reservar-id').value = mesaId;
-                        if (formReservar) formReservar.reset();
-                        if (modalReservar) modalReservar.style.display = 'block';
-                    });
-                }
+                // reservar eliminado
                 
                 if (newCerrarBtn) {
                     newCerrarBtn.addEventListener('click', () => {
@@ -1924,8 +1706,43 @@ function initMesasView() {
         });
     }
     
-    // Rehidratar estados persistidos y estadísticas
-    rehydrateMesasFromStorage();
+    // Cargar desde API y luego rehidratar estados locales
+    async function cargarMesasDesdeAPI() {
+        try {
+            const resp = await fetch('/api/mesas');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            let mesas = await resp.json();
+            // Estados válidos: 'disponible' o 'ocupada'
+            if (gridMesas) {
+                gridMesas.innerHTML = mesas.map(m => {
+                    const estadoClase = m.estado === 'ocupada' ? 'ocupada' : 'disponible';
+                    const estadoBadge = m.estado === 'ocupada' ? '<span class="mesa-estado estado-ocupada"><i class="fas fa-users"></i> Ocupada</span>' : '<span class="mesa-estado estado-disponible"><i class="fas fa-check-circle"></i> Disponible</span>';
+                    return `
+                        <div class="mesa-card ${estadoClase}" data-id="${m.id}" data-estado="${m.estado}" data-capacidad="${m.capacidad}">
+                            <div class="mesa-numero">Mesa ${m.numero}</div>
+                            ${estadoBadge}
+                            <div class="mesa-acciones">
+                                ${m.estado === 'disponible' ? `
+                                <button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${m.id}\"><i class=\"fas fa-play\"></i> Ocupar</button>
+                                ` : m.estado === 'ocupada' ? `
+                                <button class=\"btn btn-sm btn-info btn-ver\" data-id=\"${m.id}\"><i class=\"fas fa-eye\"></i> Ver</button>
+                                <button class=\"btn btn-sm btn-primary btn-cerrar\" data-id=\"${m.id}\"><i class=\"fas fa-check\"></i> Cerrar</button>
+                                ` : ``}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            rehydrateMesasFromStorage();
+            actualizarEstadisticas();
+            aplicarFiltrosMesas();
+        } catch (e) {
+            console.error('No se pudieron cargar mesas:', e);
+            if (gridMesas) gridMesas.innerHTML = '<div class="alert alert-warning">No se pudieron cargar las mesas</div>';
+        }
+    }
+
+    cargarMesasDesdeAPI();
     
     // Simular tiempo transcurrido para mesas ocupadas
     function actualizarTiempos() {
@@ -1949,253 +1766,7 @@ function initMesasView() {
     setInterval(actualizarTiempos, 1000);
 }
 
-// ============================
-// VISTA: RESERVACIONES
-// ============================
-
-function initReservacionesView() {
-    console.log('Inicializando vista Reservaciones');
-    
-    // Elementos del DOM
-    const btnNuevaReserva = document.getElementById('btn-nueva-reserva');
-    const modalNuevaReserva = document.getElementById('modal-nueva-reserva');
-    const modalVerReserva = document.getElementById('modal-ver-reserva');
-    const formNuevaReserva = document.getElementById('form-nueva-reserva');
-    const filtroFecha = document.getElementById('filtro-fecha');
-    const filtroEstado = document.getElementById('filtro-estado');
-    const filtroMesa = document.getElementById('filtro-mesa');
-    const btnDiaAnterior = document.getElementById('btn-dia-anterior');
-    const btnDiaSiguiente = document.getElementById('btn-dia-siguiente');
-    const btnHoy = document.getElementById('btn-hoy');
-    const fechaActual = document.getElementById('fecha-actual');
-    const fechaLista = document.getElementById('fecha-lista');
-
-    // Fecha actual
-    let fechaSeleccionada = new Date();
-
-    // Inicializar fecha en el filtro
-    function inicializarFecha() {
-        const hoy = new Date().toISOString().split('T')[0];
-        if (filtroFecha) filtroFecha.value = hoy;
-        actualizarDisplayFecha();
-    }
-
-    // Actualizar display de fecha
-    function actualizarDisplayFecha() {
-        const fecha = new Date(filtroFecha.value);
-        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        if (fechaActual) fechaActual.textContent = fecha.toLocaleDateString('es-ES', options);
-        if (fechaLista) fechaLista.textContent = fecha.toLocaleDateString('es-ES', options);
-        fechaSeleccionada = fecha;
-    }
-
-    // Navegación entre días
-    if (btnDiaAnterior) {
-        btnDiaAnterior.addEventListener('click', () => {
-            const fecha = new Date(filtroFecha.value);
-            fecha.setDate(fecha.getDate() - 1);
-            filtroFecha.value = fecha.toISOString().split('T')[0];
-            actualizarDisplayFecha();
-            cargarReservaciones();
-        });
-    }
-
-    if (btnDiaSiguiente) {
-        btnDiaSiguiente.addEventListener('click', () => {
-            const fecha = new Date(filtroFecha.value);
-            fecha.setDate(fecha.getDate() + 1);
-            filtroFecha.value = fecha.toISOString().split('T')[0];
-            actualizarDisplayFecha();
-            cargarReservaciones();
-        });
-    }
-
-    if (btnHoy) {
-        btnHoy.addEventListener('click', () => {
-            const hoy = new Date().toISOString().split('T')[0];
-            filtroFecha.value = hoy;
-            actualizarDisplayFecha();
-            cargarReservaciones();
-        });
-    }
-
-    // Cambio de fecha
-    if (filtroFecha) {
-        filtroFecha.addEventListener('change', () => {
-            actualizarDisplayFecha();
-            cargarReservaciones();
-        });
-    }
-
-    // Filtros
-    if (filtroEstado) {
-        filtroEstado.addEventListener('change', cargarReservaciones);
-    }
-
-    if (filtroMesa) {
-        filtroMesa.addEventListener('change', cargarReservaciones);
-    }
-
-    // Modal nueva reservación
-    if (btnNuevaReserva) {
-        btnNuevaReserva.addEventListener('click', () => {
-            // Establecer fecha mínima como hoy
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('reserva-fecha').min = hoy;
-            document.getElementById('reserva-fecha').value = filtroFecha.value;
-            
-            if (formNuevaReserva) formNuevaReserva.reset();
-            if (modalNuevaReserva) modalNuevaReserva.style.display = 'block';
-        });
-    }
-
-    // Cerrar modales
-    function setupModalClose(modal) {
-        const closeBtn = modal.querySelector('.close-modal');
-        const cancelBtn = modal.querySelector('.btn-outline');
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                if (modal) modal.style.display = 'none';
-            });
-        }
-
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
-                if (modal) modal.style.display = 'none';
-            });
-        }
-    }
-
-    setupModalClose(modalNuevaReserva);
-    setupModalClose(modalVerReserva);
-
-    // Cerrar modales al hacer clic fuera
-    window.addEventListener('click', (e) => {
-        if (e.target === modalNuevaReserva) modalNuevaReserva.style.display = 'none';
-        if (e.target === modalVerReserva) modalVerReserva.style.display = 'none';
-    });
-
-    // Enviar formulario de nueva reservación
-    if (formNuevaReserva) {
-        formNuevaReserva.addEventListener('submit', (e) => {
-            e.preventDefault();
-            // Aquí iría la lógica para crear la reservación
-            alert('Reservación creada correctamente');
-            if (modalNuevaReserva) modalNuevaReserva.style.display = 'none';
-            cargarReservaciones();
-        });
-    }
-
-    // Botones de acción en reservaciones
-    function setupBotonesReservaciones() {
-        // Botones de check-in
-        document.querySelectorAll('.btn-checkin').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const reservacionId = e.target.closest('button').dataset.id;
-                hacerCheckin(reservacionId);
-            });
-        });
-
-        // Botones de confirmar
-        document.querySelectorAll('.btn-confirmar').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const reservacionId = e.target.closest('button').dataset.id;
-                confirmarReservacion(reservacionId);
-            });
-        });
-
-        // Botones de ver
-        document.querySelectorAll('.btn-ver').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const reservacionId = e.target.closest('button').dataset.id;
-                verReservacion(reservacionId);
-            });
-        });
-
-        // Botones de editar
-        document.querySelectorAll('.btn-editar').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const reservacionId = e.target.closest('button').dataset.id;
-                editarReservacion(reservacionId);
-            });
-        });
-    }
-
-    // Funciones de acción
-    function hacerCheckin(reservacionId) {
-        if (confirm('¿Marcar esta reservación como check-in?')) {
-            // Aquí iría la lógica para hacer check-in
-            alert(`Check-in realizado para reservación ${reservacionId}`);
-            cargarReservaciones();
-        }
-    }
-
-    function confirmarReservacion(reservacionId) {
-        if (confirm('¿Confirmar esta reservación por teléfono?')) {
-            // Aquí iría la lógica para confirmar
-            alert(`Reservación ${reservacionId} confirmada`);
-            cargarReservaciones();
-        }
-    }
-
-    function verReservacion(reservacionId) {
-        // Aquí iría la lógica para cargar los detalles
-        if (modalVerReserva) modalVerReserva.style.display = 'block';
-    }
-
-    function editarReservacion(reservacionId) {
-        // Aquí iría la lógica para editar
-        alert(`Editando reservación ${reservacionId}`);
-    }
-
-    // Cargar reservaciones (simulado)
-    function cargarReservaciones() {
-        console.log('Cargando reservaciones para:', filtroFecha.value);
-        // Aquí iría la lógica para cargar reservaciones del backend
-        // Por ahora solo actualizamos los botones
-        setTimeout(() => {
-            setupBotonesReservaciones();
-        }, 100);
-    }
-
-    // Inicializar
-    inicializarFecha();
-    cargarReservaciones();
-    setupBotonesReservaciones();
-
-    // Simular arrastre para las reservaciones en el timeline
-    const reservacionesItems = document.querySelectorAll('.reservacion-item');
-    reservacionesItems.forEach(item => {
-        item.addEventListener('mousedown', iniciarArrastre);
-    });
-
-    function iniciarArrastre(e) {
-        // Lógica básica de arrastre (simplificada)
-        const item = e.target.closest('.reservacion-item');
-        item.style.opacity = '0.8';
-        item.style.cursor = 'grabbing';
-
-        function onMouseMove(e) {
-            // Lógica de arrastre aquí
-        }
-
-        function onMouseUp() {
-            item.style.opacity = '1';
-            item.style.cursor = 'pointer';
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        }
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    }
-
-    // Auto-actualización cada minuto
-    setInterval(() => {
-        cargarReservaciones();
-    }, 60000);
-}
+// vista reservaciones eliminada
 
 // ============================
 // VISTA: AJUSTES
@@ -2229,7 +1800,7 @@ function initAjustesView() {
         });
     });
 
-    // Guardar ajustes
+    // Guardar ajustes (abre confirmación)
     if (btnGuardar) {
         btnGuardar.addEventListener('click', () => {
             if (modalConfirmacion) modalConfirmacion.style.display = 'block';
@@ -2303,13 +1874,39 @@ function initAjustesView() {
             }
         };
 
-        // Aquí iría la lógica para guardar en el backend
         console.log('Guardando ajustes:', ajustes);
-        
-        // Simular guardado
-        setTimeout(() => {
-            alert('Ajustes guardados correctamente');
-        }, 500);
+
+        // Aplicar cambios a Mesas vía API bulk-generate
+        const total = ajustes.mesas.numeroMesas;
+        const body = {
+            total,
+            dist: {
+                '2': ajustes.mesas.mesas2Personas,
+                '4': ajustes.mesas.mesas4Personas,
+                '6': ajustes.mesas.mesas6Personas,
+                '8': ajustes.mesas.mesas8Personas
+            },
+            ubicaciones: ['interior', 'terraza', 'exterior', 'privado'],
+            reset: true,
+            startNumber: 1
+        };
+
+        fetch('/api/mesas/bulk-generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(() => {
+            alert('Ajustes guardados y mesas actualizadas');
+        })
+        .catch(err => {
+            console.error('Error actualizando mesas:', err);
+            alert('Ajustes guardados, pero hubo un error al actualizar las mesas');
+        });
     }
 
     // Cargar ajustes guardados
@@ -2317,6 +1914,33 @@ function initAjustesView() {
         // Aquí iría la lógica para cargar ajustes del backend
         // Por ahora usamos valores por defecto
         console.log('Cargando ajustes...');
+
+        // Completar inputs de Mesas desde la API real
+        (async () => {
+            try {
+                const resp = await fetch('/api/mesas');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const mesas = await resp.json();
+                const activas = mesas.filter(m => m.activo === 1 || m.activo === true || m.activo === undefined);
+                const total = activas.length;
+                const d2 = activas.filter(m => Number(m.capacidad) === 2).length;
+                const d4 = activas.filter(m => Number(m.capacidad) === 4).length;
+                const d6 = activas.filter(m => Number(m.capacidad) === 6).length;
+                const d8 = activas.filter(m => Number(m.capacidad) >= 8).length;
+                const totalInput = document.getElementById('numero-mesas');
+                const d2Input = document.getElementById('mesas-2personas');
+                const d4Input = document.getElementById('mesas-4personas');
+                const d6Input = document.getElementById('mesas-6personas');
+                const d8Input = document.getElementById('mesas-8personas');
+                if (totalInput) totalInput.value = String(total);
+                if (d2Input) d2Input.value = String(d2);
+                if (d4Input) d4Input.value = String(d4);
+                if (d6Input) d6Input.value = String(d6);
+                if (d8Input) d8Input.value = String(d8);
+            } catch (e) {
+                console.error('No se pudo cargar la distribución de mesas:', e);
+            }
+        })();
     }
 
     // Color picker interactivo
@@ -2366,7 +1990,6 @@ if (typeof module !== 'undefined' && module.exports) {
         initEmpleadosView,
         initVentaRapidaView,
         initMesasView,
-        initReservacionesView,
         initAjustesView
     };
 }

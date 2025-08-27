@@ -21,10 +21,7 @@
                 <i class="fas fa-chair"></i>
                 <span>Mesas</span>
             </button>
-            <button class="ajuste-menu-item" data-target="reservaciones">
-                <i class="fas fa-calendar-check"></i>
-                <span>Reservaciones</span>
-            </button>
+            
             <button class="ajuste-menu-item" data-target="usuarios">
                 <i class="fas fa-users"></i>
                 <span>Usuarios</span>
@@ -37,89 +34,119 @@
 
         <!-- Contenido de ajustes -->
         <div class="ajustes-content">
-            <!-- Sección General -->
+            <!-- Sección General: Catálogos y Roles/Permisos -->
             <div id="seccion-general" class="ajuste-seccion active">
-                <h2><i class="fas fa-sliders-h"></i> Configuración General</h2>
-                
+                <h2><i class="fas fa-sliders-h"></i> Catálogos y Seguridad</h2>
+
                 <div class="ajuste-grupo">
-                    <h3>Apariencia</h3>
+                    <h3>Roles</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="tema-sistema">Tema del Sistema</label>
-                            <select id="tema-sistema" class="form-select">
-                                <option value="claro">Tema Claro</option>
-                                <option value="oscuro">Tema Oscuro</option>
-                                <option value="auto">Automático (según sistema)</option>
-                            </select>
+                            <label for="rol-nombre">Nombre</label>
+                            <input id="rol-nombre" class="form-input" placeholder="Nombre del rol">
                         </div>
-                        
                         <div class="form-group">
-                            <label for="color-principal">Color Principal</label>
-                            <div class="color-picker-container">
-                                <input type="color" id="color-principal" value="#4c6ef5" class="color-picker">
-                                <span class="color-value">#4c6ef5</span>
-                            </div>
+                            <label for="rol-desc">Descripción</label>
+                            <input id="rol-desc" class="form-input" placeholder="Descripción (opcional)">
                         </div>
+                        <div class="form-group">
+                            <button id="btn-rol-guardar" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Rol</button>
+                            <input type="hidden" id="rol-id">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-roles">
+                            <thead>
+                                <tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
 
                 <div class="ajuste-grupo">
-                    <h3>Idioma y Región</h3>
+                    <h3>Permisos por Rol</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="idioma-sistema">Idioma</label>
-                            <select id="idioma-sistema" class="form-select">
-                                <option value="es">Español</option>
-                                <option value="en">English</option>
-                                <option value="pt">Português</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="zona-horaria">Zona Horaria</label>
-                            <select id="zona-horaria" class="form-select">
-                                <option value="America/Mexico_City">CDMX (UTC-6)</option>
-                                <option value="America/New_York">EST (UTC-5)</option>
-                                <option value="America/Los_Angeles">PST (UTC-8)</option>
-                                <option value="UTC">UTC</option>
-                            </select>
+                            <label for="rol-select-permisos">Rol</label>
+                            <select id="rol-select-permisos" class="form-select"></select>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="formato-fecha">Formato de Fecha</label>
-                        <select id="formato-fecha" class="form-select">
-                            <option value="dd/mm/yyyy">DD/MM/YYYY</option>
-                            <option value="mm/dd/yyyy">MM/DD/YYYY</option>
-                            <option value="yyyy-mm-dd">YYYY-MM-DD</option>
-                        </select>
+                    <div class="permisos-list" id="lista-permisos"></div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="btn-guardar-permisos"><i class="fas fa-check"></i> Guardar Permisos</button>
                     </div>
                 </div>
 
                 <div class="ajuste-grupo">
-                    <h3>Notificaciones</h3>
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="notificaciones-email" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Notificaciones por Email</span>
-                        </label>
+                    <h3>Departamentos</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dep-nombre">Nombre</label>
+                            <input id="dep-nombre" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="dep-desc">Descripción</label>
+                            <input id="dep-desc" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <button id="btn-dep-guardar" class="btn btn-primary">Guardar</button>
+                            <input type="hidden" id="dep-id">
+                        </div>
                     </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="notificaciones-sistema" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Notificaciones del Sistema</span>
-                        </label>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-dep">
+                            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Activo</th><th>Acciones</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="recordatorios-reservas" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Recordatorios de Reservas</span>
-                        </label>
+                </div>
+
+                <div class="ajuste-grupo">
+                    <h3>Turnos</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tur-nombre">Nombre</label>
+                            <input id="tur-nombre" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="tur-desc">Descripción</label>
+                            <input id="tur-desc" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <button id="btn-tur-guardar" class="btn btn-primary">Guardar</button>
+                            <input type="hidden" id="tur-id">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-tur">
+                            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Activo</th><th>Acciones</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="ajuste-grupo">
+                    <h3>Cargos</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="car-nombre">Nombre</label>
+                            <input id="car-nombre" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="car-desc">Descripción</label>
+                            <input id="car-desc" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <button id="btn-car-guardar" class="btn btn-primary">Guardar</button>
+                            <input type="hidden" id="car-id">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-car">
+                            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Activo</th><th>Acciones</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -308,12 +335,7 @@
                             <input type="number" id="tiempo-promedio-bebidas" class="form-input" value="20" min="5" max="60">
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="tiempo-limite-reserva">Tiempo Límite de Reserva (min)</label>
-                        <input type="number" id="tiempo-limite-reserva" class="form-input" value="15" min="5" max="60">
-                        <small>Tiempo máximo de espera después de la hora reservada</small>
-                    </div>
+                    <!-- Campo de tiempo límite de reserva eliminado -->
                 </div>
 
                 <div class="ajuste-grupo">
@@ -334,82 +356,7 @@
                 </div>
             </div>
 
-            <!-- Sección Reservaciones -->
-            <div id="seccion-reservaciones" class="ajuste-seccion">
-                <h2><i class="fas fa-calendar-check"></i> Configuración de Reservaciones</h2>
-                
-                <div class="ajuste-grupo">
-                    <h3>Políticas de Reservación</h3>
-                    <div class="form-group">
-                        <label for="anticipacion-reserva">Anticipación Mínima (horas)</label>
-                        <input type="number" id="anticipacion-reserva" class="form-input" value="2" min="1" max="48">
-                        <small>Tiempo mínimo para hacer una reservación</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="maximo-personas-reserva">Máximo de Personas por Reserva</label>
-                        <input type="number" id="maximo-personas-reserva" class="form-input" value="12" min="1" max="50">
-                    </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="reservas-online" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Permitir reservas online</span>
-                        </label>
-                    </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="confirmacion-automatica" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Confirmación automática de reservas</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="ajuste-grupo">
-                    <h3>Recordatorios</h3>
-                    <div class="form-group">
-                        <label for="tiempo-recordatorio">Tiempo de Recordatorio (horas)</label>
-                        <input type="number" id="tiempo-recordatorio" class="form-input" value="24" min="1" max="72">
-                        <small>Tiempo antes de la reserva para enviar recordatorio</small>
-                    </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="recordatorio-sms" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Enviar recordatorio por SMS</span>
-                        </label>
-                    </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="recordatorio-email" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Enviar recordatorio por Email</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="ajuste-grupo">
-                    <h3>Política de Cancelación</h3>
-                    <div class="form-group">
-                        <label for="tiempo-cancelacion">Tiempo Máximo para Cancelar (horas)</label>
-                        <input type="number" id="tiempo-cancelacion" class="form-input" value="4" min="1" max="24">
-                        <small>Tiempo mínimo antes de la reserva para cancelar sin penalización</small>
-                    </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="penalizacion-cancelacion">
-                            <span class="slider"></span>
-                            <span class="switch-label">Aplicar penalización por cancelación tardía</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
+            
 
             <!-- Sección Usuarios -->
             <div id="seccion-usuarios" class="ajuste-seccion">
@@ -495,9 +442,6 @@
                         <div class="permisos-list">
                             <label class="checkbox">
                                 <input type="checkbox" checked> Gestionar mesas
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" checked> Gestionar reservaciones
                             </label>
                             <label class="checkbox">
                                 <input type="checkbox"> Gestionar usuarios

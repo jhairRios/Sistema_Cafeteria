@@ -39,10 +39,7 @@ Este frontend está modularizado con ES Modules. Cada vista tiene su propio arch
   - initVentasRapidas(): lógica de carrito, pagos (efectivo), impresión de factura y ticket de cocina, filtros por categoría y búsqueda de productos.
 
 - js/views/mesas.js
-  - initMesas(): estados de mesa (disponible/ocupada/reservada), modales de ocupar y reservar, persistencia con localStorage, navegación a Venta Rápida.
-
-- js/views/reservaciones.js
-  - initReservaciones(): navegación por días, filtros, creación de reservas (simulado) y acciones básicas.
+  - initMesas(): estados de mesa (disponible/ocupada), modal de ocupar, persistencia con backend, navegación a Venta Rápida.
 
 - js/views/ajustes.js
   - initAjustes(): navegación de secciones, guardado simulado y vista previa de color primario.

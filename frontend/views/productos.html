@@ -42,123 +42,13 @@
                         <th>Categoría</th>
                         <th>Precio</th>
                         <th>Stock</th>
+                        <th>Mín.</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>PROD-001</td>
-                        <td>Café Americano</td>
-                        <td>Bebidas Calientes</td>
-                        <td>$2.50</td>
-                        <td>45</td>
-                        <td><span class="badge badge-success">Disponible</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-001">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-001">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PROD-002</td>
-                        <td>Capuchino</td>
-                        <td>Bebidas Calientes</td>
-                        <td>$3.25</td>
-                        <td>32</td>
-                        <td><span class="badge badge-success">Disponible</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-002">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-002">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PROD-003</td>
-                        <td>Sandwich de Pollo</td>
-                        <td>Comida</td>
-                        <td>$5.75</td>
-                        <td>18</td>
-                        <td><span class="badge badge-success">Disponible</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-003">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-003">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PROD-004</td>
-                        <td>Tarta de Manzana</td>
-                        <td>Postres</td>
-                        <td>$4.00</td>
-                        <td>6</td>
-                        <td><span class="badge badge-warning">Bajo Stock</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-004">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-004">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PROD-005</td>
-                        <td>Jugo de Naranja Natural</td>
-                        <td>Bebidas Frías</td>
-                        <td>$3.00</td>
-                        <td>0</td>
-                        <td><span class="badge badge-danger">Agotado</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-005">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-005">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PROD-006</td>
-                        <td>Expreso</td>
-                        <td>Bebidas Calientes</td>
-                        <td>$2.00</td>
-                        <td>28</td>
-                        <td><span class="badge badge-success">Disponible</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-006">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-006">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>PROD-007</td>
-                        <td>Brownie de Chocolate</td>
-                        <td>Postres</td>
-                        <td>$3.50</td>
-                        <td>4</td>
-                        <td><span class="badge badge-warning">Bajo Stock</span></td>
-                        <td class="acciones">
-                            <button class="btn btn-sm btn-warning btn-editar" data-id="PROD-007">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-eliminar" data-id="PROD-007">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
+                <tbody id="tbody-productos">
+                    <!-- Se llena dinámicamente desde JS con /api/productos -->
                 </tbody>
             </table>
         </div>
@@ -212,6 +102,13 @@
                     <div class="form-group">
                         <label for="producto-stock">Stock</label>
                         <input type="number" id="producto-stock" class="form-input" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="producto-stock-minimo">Stock mínimo</label>
+                        <input type="number" id="producto-stock-minimo" class="form-input" min="0" value="0">
                     </div>
                 </div>
                 

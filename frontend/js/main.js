@@ -9,7 +9,7 @@ const state = {
 };
 
 function setUserHeader() {
-  const name = localStorage.getItem('nombreUsuario') || 'Usuario';
+  const name = sessionStorage.getItem('nombreUsuario') || 'Usuario';
   const el = document.getElementById('user-name');
   if (el) el.textContent = name;
 }
@@ -33,7 +33,12 @@ function setupUserDropdown() {
   verPerfilBtn && (verPerfilBtn.onclick = () => alert('Ver perfil (pendiente)'));
   if (cerrarSesionBtn) {
     cerrarSesionBtn.onclick = function () {
-      localStorage.removeItem('logueado');
+      try {
+        sessionStorage.removeItem('logueado');
+        sessionStorage.removeItem('nombreUsuario');
+        localStorage.setItem('forceLogout', Date.now().toString());
+        setTimeout(() => localStorage.removeItem('forceLogout'), 0);
+      } catch (_) {}
       window.location.href = 'login.html';
     };
   }
@@ -98,6 +103,17 @@ function setupSidebar() {
 
 function setupNavigation() {
   const navButtons = document.querySelectorAll('.nav-btn');
+  // Ocultar según permisos
+  try {
+    const permisos = JSON.parse(sessionStorage.getItem('permisos') || '[]');
+    const viewPerm = (view) => `view.${view}`;
+    navButtons.forEach(btn => {
+      const viewName = btn.getAttribute('data-view');
+      if (!permisos.includes(viewPerm(viewName))) {
+        btn.style.display = 'none';
+      }
+    });
+  } catch(_) {}
   navButtons.forEach((button) => {
     button.addEventListener('click', (e) => {
       e.preventDefault();
@@ -147,11 +163,7 @@ async function loadView(viewName) {
       mod.initMesas();
       break;
     }
-    case 'reservaciones': {
-      const mod = await import('./views/reservaciones.js');
-      mod.initReservaciones();
-      break;
-    }
+    
     case 'ajustes': {
       const mod = await import('./views/ajustes.js');
       mod.initAjustes();
@@ -162,7 +174,7 @@ async function loadView(viewName) {
       mod.initReportes();
       break;
     }
-    // Extiende aquí con más vistas: ventas-rapidas, mesas, reservaciones, ajustes, reportes
+  // Extiende aquí con más vistas: ventas-rapidas, mesas, ajustes, reportes
     default:
       console.info(`Vista ${viewName} cargada.`);
   }

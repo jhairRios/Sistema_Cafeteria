@@ -1,6 +1,6 @@
 # Sistema Web SPA (Restaurante)
 
-Sistema web responsive tipo SPA para gestión de restaurante: header fijo, sidebar colapsable, navegación por vistas, y componentes listos para flujo de trabajo (productos, empleados, mesas, reservaciones, reportes y venta rápida). Backend Express básico para servir el frontend y exponer rutas de ejemplo.
+Sistema web responsive tipo SPA para gestión de restaurante: header fijo, sidebar colapsable, navegación por vistas, y componentes listos para flujo de trabajo (productos, empleados, mesas, reportes y venta rápida). Backend Express básico para servir el frontend y exponer rutas de ejemplo.
 
 ## Estructura del proyecto
 
@@ -32,7 +32,7 @@ Sistema/
       ├─ empleados.html
       ├─ ventas-rapidas.html
       ├─ mesas.html
-      ├─ reservaciones.html
+      
       ├─ reportes.html
       └─ ajustes.html
 ```
@@ -67,7 +67,7 @@ Vistas incluidas y hooks en `app.js`:
 - empleados -> initEmpleadosView
 - ventas-rapidas -> initVentaRapidaView
 - mesas -> initMesasView
-- reservaciones -> initReservacionesView
+ 
 - ajustes -> initAjustesView
 - reportes -> initReportesView
 

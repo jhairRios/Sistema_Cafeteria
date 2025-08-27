@@ -1,4 +1,6 @@
 // js/views/ventas-rapidas.js
+import { api } from '../core/api.js';
+
 export function initVentasRapidas() {
     console.log('Inicializando vista Venta Rápida');
 
@@ -35,16 +37,53 @@ export function initVentasRapidas() {
         }
     }
 
-    const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
-    botonesAgregar.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const productoCard = e.target.closest('.producto-card');
-            const productoId = productoCard.dataset.id;
-            const productoNombre = productoCard.querySelector('h4').textContent;
-            const productoPrecio = parseFloat(productoCard.dataset.precio);
-            agregarAlCarrito(productoId, productoNombre, productoPrecio);
+    // Cargar productos desde API y enlazar eventos
+    const grid = document.getElementById('productos-grid');
+    loadProductos();
+
+    async function loadProductos() {
+        if (!grid) return;
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><i class="fas fa-spinner fa-spin"></i> Cargando productos...</div>';
+        try {
+            const data = await api.get('/api/productos');
+            const items = (Array.isArray(data) ? data : []).filter(p => Number(p.stock) > 0);
+            if (items.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem">No hay productos disponibles.</div>';
+                return;
+            }
+            grid.innerHTML = items.map(p => `
+                <div class="producto-card" data-id="${p.id}" data-categoria="${escapeHtml(p.categoria || '')}" data-precio="${Number(p.precio)}">
+                    <div class="producto-img"><i class="fas fa-box"></i></div>
+                    <div class="producto-info">
+                        <h4>${escapeHtml(p.nombre)}</h4>
+                        <p class="producto-precio">${formatMoney(p.precio)}</p>
+                        <p class="producto-stock">Disponible: ${p.stock}</p>
+                    </div>
+                    <button class="btn-agregar-producto"><i class="fas fa-plus"></i> Agregar</button>
+                </div>`).join('');
+            bindAgregarHandlers();
+        } catch (e) {
+            console.error(e);
+            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:#dc3545">No se pudieron cargar los productos.</div>';
+        }
+    }
+
+    function bindAgregarHandlers() {
+        const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
+        botonesAgregar.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productoCard = e.target.closest('.producto-card');
+                if (!productoCard) return;
+                const productoId = String(productoCard.dataset.id);
+                const productoNombre = productoCard.querySelector('h4').textContent;
+                const productoPrecio = parseFloat(productoCard.dataset.precio);
+                agregarAlCarrito(productoId, productoNombre, productoPrecio);
+            });
         });
-    });
+    }
+
+    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    function formatMoney(v) { return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(v||0)); }
 
     function agregarAlCarrito(id, nombre, precio) {
         const productoExistente = carrito.find(item => item.id === id);
@@ -186,10 +225,33 @@ export function initVentasRapidas() {
         try { imprimirFacturaYTicket(carrito, total, mesaContext); } catch (e) { console.error('Error al generar impresión:', e); }
     });
 
-    function procesarVenta() {
-        alert('Venta procesada correctamente');
-        carrito = [];
-        actualizarCarrito();
+    async function procesarVenta() {
+        try {
+            // Construir payload: [{ id, cantidad }]
+            const items = carrito.map(it => ({ id: Number(it.id), cantidad: Number(it.cantidad) }));
+            const res = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || `Error HTTP ${res.status}`);
+            }
+            // Opcional: actualizar stocks en tarjetas si están visibles
+            const data = await res.json();
+            if (Array.isArray(data.updated)) {
+                data.updated.forEach(u => {
+                    const card = document.querySelector(`.producto-card[data-id="${u.id}"] .producto-stock`);
+                    if (card) card.textContent = `Disponible: ${u.stock}`;
+                });
+            }
+            alert('Venta procesada correctamente');
+            carrito = [];
+            actualizarCarrito();
+        } catch (e) {
+            alert(e.message || 'Error al procesar la venta');
+        }
     }
 
     function imprimirFacturaYTicket(items, totalVenta, mesaCtx) {
@@ -234,7 +296,7 @@ export function initVentasRapidas() {
     function filtrarProductos(categoria) {
         const productos = document.querySelectorAll('.producto-card');
         productos.forEach(producto => {
-            if (categoria === 'todos' || producto.dataset.categoria === categoria) producto.style.display = 'block';
+            if (categoria === 'todos' || producto.dataset.categoria === categoria) producto.style.display = '';
             else producto.style.display = 'none';
         });
     }
@@ -259,7 +321,11 @@ export function initVentasRapidas() {
             const productos = document.querySelectorAll('.producto-card');
             productos.forEach(producto => {
                 const nombre = producto.querySelector('h4').textContent.toLowerCase();
-                producto.style.display = nombre.includes(termino) ? 'block' : 'none';
+                if (termino === '') {
+                    producto.style.display = '';
+                } else {
+                    producto.style.display = nombre.includes(termino) ? '' : 'none';
+                }
             });
         });
     }

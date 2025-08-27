@@ -27,8 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (res.ok) {
           const data = await res.json();
-          localStorage.setItem('logueado', '1');
-          localStorage.setItem('nombreUsuario', data.user?.nombre || 'Usuario');
+          // Limpiar vestigios previos
+          try {
+            localStorage.removeItem('logueado');
+            localStorage.removeItem('nombreUsuario');
+          } catch (_) {}
+          // Usar sessionStorage para que se pierda al cerrar el navegador
+          sessionStorage.setItem('logueado', '1');
+          sessionStorage.setItem('nombreUsuario', data.user?.nombre || 'Usuario');
+          try { sessionStorage.setItem('permisos', JSON.stringify(data.permisos || [])); } catch(_) {}
           showToast({
             title: 'Bienvenido',
             message: `Hola ${data.user?.nombre || 'Usuario'}`,
