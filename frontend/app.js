@@ -851,6 +851,24 @@ function initEmpleadosView() {
 
 function initVentaRapidaView() {
     console.log('Inicializando vista Venta Rápida');
+    // Cargar config del restaurante para impresión de factura (preferir localStorage)
+    try {
+        const cache = localStorage.getItem('restauranteConfig');
+        if (cache) window.__restauranteConfig = JSON.parse(cache);
+    } catch {}
+    try {
+        fetch('/api/restaurante')
+            .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+            .then(cfg => { window.__restauranteConfig = cfg; try { localStorage.setItem('restauranteConfig', JSON.stringify(cfg)); } catch {} })
+            .catch(() => { /* silencioso */ });
+    } catch (_) {}
+    // Escuchar actualizaciones en caliente desde Ajustes
+    try {
+        window.addEventListener('restauranteConfigUpdated', (e) => {
+            window.__restauranteConfig = e.detail;
+            try { localStorage.setItem('restauranteConfig', JSON.stringify(e.detail)); } catch {}
+        });
+    } catch {}
     
     let carrito = [];
     let total = 0;
@@ -1114,12 +1132,35 @@ function initVentaRapidaView() {
         function imprimirFacturaYTicket(items, totalVenta, mesaCtx) {
                 const ahora = new Date();
                 const folio = 'FAC-' + ahora.getTime();
-                const negocio = 'Cafetería Sistema';
-                const direccion = 'Calle 123, Ciudad';
-                const tel = 'Tel: 555-123-4567';
+                // Tomar la versión más reciente
+                let cfg = window.__restauranteConfig || {};
+                try {
+                    const cache = localStorage.getItem('restauranteConfig');
+                    if (cache) cfg = JSON.parse(cache);
+                } catch {}
+                const negocio = cfg.nombre || 'Cafetería Sistema';
+                const direccion = cfg.direccion || 'Calle 123, Ciudad';
+                const telefono = cfg.telefono || '';
+                const email = cfg.email || '';
+                const contactoLinea = [telefono, email].filter(Boolean).join(' · ');
+
+                const ivaRate = Math.max(0, Number(cfg.iva_porcentaje ?? 16)) / 100;
+                const propRate = Math.max(0, Number(cfg.propina_automatica ?? 0)) / 100;
+                const incluirIVA = (cfg.incluir_iva ?? 1) ? true : false;
 
                 const subtotal = items.reduce((s, it) => s + it.subtotal, 0);
-                const impuestos = subtotal * 0.16;
+                let base = subtotal, iva = 0, subtotalConIVA = subtotal;
+                if (incluirIVA) {
+                    base = ivaRate > 0 ? (subtotal / (1 + ivaRate)) : subtotal;
+                    iva = subtotal - base;
+                    subtotalConIVA = subtotal; // ya incluido
+                } else {
+                    base = subtotal;
+                    iva = base * ivaRate;
+                    subtotalConIVA = base + iva;
+                }
+                const propina = propRate > 0 ? subtotalConIVA * propRate : 0;
+                const totalCalculado = subtotalConIVA + propina;
 
                 // Factura tamaño media carta aprox
                 const mesaMeta = mesaCtx ? `<div class="meta">Mesa ${mesaCtx.id} · ${mesaCtx.cliente || 'Sin nombre'}${mesaCtx.personas ? ' · ' + mesaCtx.personas + ' persona(s)' : ''}</div>` : '';
@@ -1146,7 +1187,8 @@ function initVentaRapidaView() {
 <body>
     <div class="header">
         <h1>${negocio}</h1>
-        <div class="meta">${direccion} · ${tel}</div>
+        <div class="meta">${direccion}</div>
+        ${contactoLinea ? `<div class="meta">${contactoLinea}</div>` : ''}
         <div class="meta">Folio: ${folio} · ${ahora.toLocaleString()}</div>
     ${mesaMeta}
     </div>
@@ -1157,9 +1199,10 @@ function initVentaRapidaView() {
         </tbody>
     </table>
     <div class="totales">
-        <div><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></div>
-        <div><span>Impuestos (16%):</span><span>$${impuestos.toFixed(2)}</span></div>
-        <div class="final"><span>Total:</span><span>$${totalVenta.toFixed(2)}</span></div>
+    <div><span>Base:</span><span>$${base.toFixed(2)}</span></div>
+    <div><span>IVA (${(ivaRate*100).toFixed(2)}%):</span><span>$${iva.toFixed(2)}</span></div>
+    ${propRate > 0 ? `<div><span>Propina (${(propRate*100).toFixed(2)}%):</span><span>$${propina.toFixed(2)}</span></div>` : ''}
+    <div class="final"><span>Total:</span><span>$${totalCalculado.toFixed(2)}</span></div>
     </div>
     <div class="footer">¡Gracias por su compra!</div>
     <div class="no-print" style="text-align:center"><button onclick="window.print()">Imprimir</button></div>
@@ -1804,6 +1847,7 @@ function initAjustesView() {
     const btnCrearBackup = document.getElementById('btn-crear-backup');
     const btnProgramarBackup = document.getElementById('btn-programar-backup');
     const selFrecuencia = document.getElementById('frecuencia-backup');
+    const inpRetencion = document.getElementById('retencion-backup');
     const inputArchivoBackup = document.getElementById('archivo-backup');
     const btnRestaurarBackup = document.getElementById('btn-restaurar-backup');
     const btnRestaurarDefaults = document.getElementById('btn-restaurar-defaults');
@@ -1838,119 +1882,123 @@ function initAjustesView() {
     });
 
     // Función para guardar ajustes
-    function guardarAjustes() {
-        // Recopilar todos los valores de los ajustes
-        const ajustes = {
-            general: {
-                tema: document.getElementById('tema-sistema').value,
-                colorPrincipal: document.getElementById('color-principal').value,
-                idioma: document.getElementById('idioma-sistema').value,
-                zonaHoraria: document.getElementById('zona-horaria').value,
-                formatoFecha: document.getElementById('formato-fecha').value,
-                notificacionesEmail: document.getElementById('notificaciones-email').checked,
-                notificacionesSistema: document.getElementById('notificaciones-sistema').checked,
-                recordatoriosReservas: document.getElementById('recordatorios-reservas').checked
-            },
-            restaurante: {
-                nombre: document.getElementById('nombre-restaurante').value,
-                direccion: document.getElementById('direccion-restaurante').value,
-                telefono: document.getElementById('telefono-restaurante').value,
-                email: document.getElementById('email-restaurante').value,
-                iva: parseFloat(document.getElementById('iva-porcentaje').value),
-                propinaAutomatica: parseFloat(document.getElementById('propina-automatica').value),
-                incluirIva: document.getElementById('incluir-iva-precios').checked
-            },
-            mesas: {
-                numeroMesas: parseInt(document.getElementById('numero-mesas').value),
-                mesas2Personas: parseInt(document.getElementById('mesas-2personas').value),
-                mesas4Personas: parseInt(document.getElementById('mesas-4personas').value),
-                mesas6Personas: parseInt(document.getElementById('mesas-6personas').value),
-                mesas8Personas: parseInt(document.getElementById('mesas-8personas').value),
-                tiempoComida: parseInt(document.getElementById('tiempo-promedio-comida').value),
-                tiempoBebidas: parseInt(document.getElementById('tiempo-promedio-bebidas').value),
-                tiempoLimiteReserva: parseInt(document.getElementById('tiempo-limite-reserva').value)
-            },
-            reservaciones: {
-                anticipacion: parseInt(document.getElementById('anticipacion-reserva').value),
-                maxPersonas: parseInt(document.getElementById('maximo-personas-reserva').value),
-                reservasOnline: document.getElementById('reservas-online').checked,
-                confirmacionAutomatica: document.getElementById('confirmacion-automatica').checked,
-                tiempoRecordatorio: parseInt(document.getElementById('tiempo-recordatorio').value),
-                recordatorioSMS: document.getElementById('recordatorio-sms').checked,
-                recordatorioEmail: document.getElementById('recordatorio-email').checked,
-                tiempoCancelacion: parseInt(document.getElementById('tiempo-cancelacion').value),
-                penalizacionCancelacion: document.getElementById('penalizacion-cancelacion').checked
-            }
-        };
-
-        console.log('Guardando ajustes:', ajustes);
-
-        // Aplicar cambios a Mesas vía API bulk-generate
-        const total = ajustes.mesas.numeroMesas;
-        const body = {
-            total,
-            dist: {
-                '2': ajustes.mesas.mesas2Personas,
-                '4': ajustes.mesas.mesas4Personas,
-                '6': ajustes.mesas.mesas6Personas,
-                '8': ajustes.mesas.mesas8Personas
-            },
-            ubicaciones: ['interior', 'terraza', 'exterior', 'privado'],
-            reset: true,
-            startNumber: 1
-        };
-
-        fetch('/api/mesas/bulk-generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        })
-        .then(r => {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-        })
-        .then(() => {
-            alert('Ajustes guardados y mesas actualizadas');
-        })
-        .catch(err => {
-            console.error('Error actualizando mesas:', err);
-            alert('Ajustes guardados, pero hubo un error al actualizar las mesas');
+    function collectHorarios() {
+        const items = Array.from(document.querySelectorAll('#seccion-restaurante .horario-item'));
+        return items.map(it => {
+            const dia = it.querySelector('.dia-semana')?.textContent?.trim() || '';
+            const apertura = it.querySelector('.horario-apertura')?.value || null;
+            const cierre = it.querySelector('.horario-cierre')?.value || null;
+            const habilitado = !!it.querySelector('.horario-switch input')?.checked;
+            return { dia, apertura, cierre, habilitado };
         });
     }
 
-    // Cargar ajustes guardados
-    function cargarAjustes() {
-        // Aquí iría la lógica para cargar ajustes del backend
-        // Por ahora usamos valores por defecto
-        console.log('Cargando ajustes...');
-
-        // Completar inputs de Mesas desde la API real
-        (async () => {
-            try {
-                const resp = await fetch('/api/mesas');
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                const mesas = await resp.json();
-                const activas = mesas.filter(m => m.activo === 1 || m.activo === true || m.activo === undefined);
-                const total = activas.length;
-                const d2 = activas.filter(m => Number(m.capacidad) === 2).length;
-                const d4 = activas.filter(m => Number(m.capacidad) === 4).length;
-                const d6 = activas.filter(m => Number(m.capacidad) === 6).length;
-                const d8 = activas.filter(m => Number(m.capacidad) >= 8).length;
-                const totalInput = document.getElementById('numero-mesas');
-                const d2Input = document.getElementById('mesas-2personas');
-                const d4Input = document.getElementById('mesas-4personas');
-                const d6Input = document.getElementById('mesas-6personas');
-                const d8Input = document.getElementById('mesas-8personas');
-                if (totalInput) totalInput.value = String(total);
-                if (d2Input) d2Input.value = String(d2);
-                if (d4Input) d4Input.value = String(d4);
-                if (d6Input) d6Input.value = String(d6);
-                if (d8Input) d8Input.value = String(d8);
-            } catch (e) {
-                console.error('No se pudo cargar la distribución de mesas:', e);
-            }
-        })();
+    async function guardarAjustes() {
+        // Sólo guardamos la configuración de restaurante aquí
+        try {
+            const payload = {
+                nombre: document.getElementById('nombre-restaurante')?.value || null,
+                direccion: document.getElementById('direccion-restaurante')?.value || null,
+                telefono: document.getElementById('telefono-restaurante')?.value || null,
+                email: document.getElementById('email-restaurante')?.value || null,
+                iva_porcentaje: parseFloat(document.getElementById('iva-porcentaje')?.value || '16') || 16,
+                propina_automatica: parseFloat(document.getElementById('propina-automatica')?.value || '10') || 10,
+                incluir_iva: document.getElementById('incluir-iva-precios')?.checked ? 1 : 0,
+                horarios: collectHorarios()
+            };
+            const r = await fetch('/api/restaurante', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            // Persistir y propagar inmediatamente
+            try { localStorage.setItem('restauranteConfig', JSON.stringify(payload)); } catch {}
+            window.__restauranteConfig = payload;
+            try { window.dispatchEvent(new CustomEvent('restauranteConfigUpdated', { detail: payload })); } catch {}
+            // Refrescar vista previa
+            actualizarPreviewFactura();
+            alert('Configuración del restaurante guardada');
+        } catch (e) {
+            console.error('Error guardando restaurante:', e);
+            alert('No se pudo guardar la configuración del restaurante: ' + e.message);
+        }
     }
+
+    // Cargar ajustes guardados
+    async function cargarAjustes() {
+        // Cargar configuración del restaurante
+        try {
+            const r = await fetch('/api/restaurante');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const cfg = await r.json();
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+            setVal('nombre-restaurante', cfg.nombre || 'Mi Restaurante');
+            setVal('direccion-restaurante', cfg.direccion || '');
+            setVal('telefono-restaurante', cfg.telefono || '');
+            setVal('email-restaurante', cfg.email || '');
+            setVal('iva-porcentaje', cfg.iva_porcentaje ?? 16);
+            setVal('propina-automatica', cfg.propina_automatica ?? 10);
+            const chk = document.getElementById('incluir-iva-precios');
+            if (chk) chk.checked = (cfg.incluir_iva ?? 1) ? true : false;
+            // Horarios
+            const horarios = Array.isArray(cfg.horarios) ? cfg.horarios : [];
+            const items = Array.from(document.querySelectorAll('#seccion-restaurante .horario-item'));
+            items.forEach(it => {
+                const dia = it.querySelector('.dia-semana')?.textContent?.trim();
+                const h = horarios.find(x => x.dia === dia);
+                if (h) {
+                    const ap = it.querySelector('.horario-apertura'); if (ap) ap.value = h.apertura || ap.value;
+                    const ci = it.querySelector('.horario-cierre'); if (ci) ci.value = h.cierre || ci.value;
+                    const sw = it.querySelector('.horario-switch input'); if (sw) sw.checked = !!h.habilitado;
+                }
+            });
+
+            // Sincronizar vista previa de factura
+            actualizarPreviewFactura();
+            // Cachear para otras vistas
+            window.__restauranteConfig = cfg;
+            try { localStorage.setItem('restauranteConfig', JSON.stringify(cfg)); } catch {}
+        } catch (e) {
+            console.error('No se pudo cargar configuración de restaurante:', e);
+        }
+    }
+
+    // Vista previa dinámica del encabezado de factura
+    function actualizarPreviewFactura() {
+        const nombre = document.getElementById('nombre-restaurante')?.value?.trim() || '—';
+        const dir = document.getElementById('direccion-restaurante')?.value?.trim() || '';
+        const tel = document.getElementById('telefono-restaurante')?.value?.trim() || '';
+        const em = document.getElementById('email-restaurante')?.value?.trim() || '';
+
+        const elNombre = document.getElementById('preview-nombre');
+        const elDir = document.getElementById('preview-direccion');
+        const elContacto = document.getElementById('preview-contacto');
+        if (elNombre) elNombre.textContent = nombre || 'Mi Restaurante';
+        if (elDir) elDir.textContent = dir;
+        if (elContacto) {
+            const parts = [];
+            if (tel) parts.push(tel);
+            if (em) parts.push(em);
+            elContacto.textContent = parts.join(' · ');
+        }
+    }
+
+    // Vincular inputs a la vista previa mientras el usuario escribe (delegación)
+    const contRest = document.getElementById('seccion-restaurante');
+    if (contRest) {
+        contRest.addEventListener('input', (e) => {
+            const id = e.target?.id;
+            if (id === 'nombre-restaurante' || id === 'direccion-restaurante' || id === 'telefono-restaurante' || id === 'email-restaurante') {
+                actualizarPreviewFactura();
+            }
+        }, true);
+        contRest.addEventListener('change', (e) => {
+            const id = e.target?.id;
+            if (id === 'nombre-restaurante' || id === 'direccion-restaurante' || id === 'telefono-restaurante' || id === 'email-restaurante') {
+                actualizarPreviewFactura();
+            }
+        }, true);
+    }
+
+    // Actualizar una vez al iniciar la vista (por si el usuario comienza a escribir antes de guardar)
+    actualizarPreviewFactura();
 
     // ====== BACKUP: acciones ======
     async function cargarBackups() {
@@ -1962,10 +2010,13 @@ function initAjustesView() {
                 tablaBackups.innerHTML = (items || []).map(it => {
                     const fecha = new Date(it.mtime).toLocaleString();
                     const tam = (Number(it.size) / (1024*1024)).toFixed(2) + ' MB';
+                    const f = (it.file||'').toLowerCase();
+                    const tipo = f.endsWith('.sql.gz') ? 'SQL (gz)' : (f.endsWith('.sql') ? 'SQL' : 'JSON');
+                    const chk = it.checksum ? `<div class="muted">${it.checksum.slice(0,12)}…</div>` : '';
                     return `<tr>
                         <td>${fecha}</td>
-                        <td>${tam}</td>
-                        <td>JSON</td>
+                        <td>${tam}${chk}</td>
+                        <td>${tipo}</td>
                         <td>OK</td>
                         <td>
                             <button class="btn btn-outline" data-dl="${it.file}">Descargar</button>
@@ -2017,7 +2068,8 @@ function initAjustesView() {
         btnProgramarBackup.addEventListener('click', async () => {
             try {
                 const freq = selFrecuencia.value;
-                const r = await fetch('/api/backup/schedule', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frequency: freq }) });
+                const keepLast = parseInt(inpRetencion?.value || '7', 10);
+                const r = await fetch('/api/backup/schedule', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frequency: freq, keepLast }) });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 alert('Backup automático programado (' + freq + ')');
             } catch (e) {

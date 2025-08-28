@@ -1,0 +1,801 @@
+{
+  "createdAt": "2025-08-28T02:44:09.279Z",
+  "data": {
+    "roles": [
+      {
+        "id": 1,
+        "nombre": "Administrador",
+        "descripcion": "Acceso completo"
+      },
+      {
+        "id": 2,
+        "nombre": "Cajero",
+        "descripcion": "Caja y ventas"
+      },
+      {
+        "id": 3,
+        "nombre": "Mesero",
+        "descripcion": "Atiende mesas y ventas rápidas"
+      },
+      {
+        "id": 4,
+        "nombre": "Supervisor",
+        "descripcion": "Supervisión y reportes"
+      }
+    ],
+    "permisos": [
+      {
+        "id": 1,
+        "clave": "view.home",
+        "nombre": "Ver Inicio",
+        "tipo": "vista",
+        "descripcion": "Acceso a Inicio"
+      },
+      {
+        "id": 2,
+        "clave": "view.productos",
+        "nombre": "Ver Productos",
+        "tipo": "vista",
+        "descripcion": "Acceso a productos"
+      },
+      {
+        "id": 3,
+        "clave": "view.empleados",
+        "nombre": "Ver Empleados",
+        "tipo": "vista",
+        "descripcion": "Acceso a empleados"
+      },
+      {
+        "id": 4,
+        "clave": "view.ventas-rapidas",
+        "nombre": "Ver Ventas Rápidas",
+        "tipo": "vista",
+        "descripcion": "Acceso a venta rápida"
+      },
+      {
+        "id": 5,
+        "clave": "view.mesas",
+        "nombre": "Ver Mesas",
+        "tipo": "vista",
+        "descripcion": "Acceso a mesas"
+      },
+      {
+        "id": 6,
+        "clave": "view.ajustes",
+        "nombre": "Ver Ajustes",
+        "tipo": "vista",
+        "descripcion": "Acceso a ajustes"
+      },
+      {
+        "id": 7,
+        "clave": "view.reportes",
+        "nombre": "Ver Reportes",
+        "tipo": "vista",
+        "descripcion": "Acceso a reportes"
+      },
+      {
+        "id": 8,
+        "clave": "action.empleados.add",
+        "nombre": "Agregar Empleado",
+        "tipo": "accion",
+        "descripcion": "Puede crear empleados"
+      },
+      {
+        "id": 9,
+        "clave": "action.empleados.edit",
+        "nombre": "Editar Empleado",
+        "tipo": "accion",
+        "descripcion": "Puede editar empleados"
+      },
+      {
+        "id": 10,
+        "clave": "action.empleados.delete",
+        "nombre": "Eliminar Empleado",
+        "tipo": "accion",
+        "descripcion": "Puede eliminar empleados"
+      },
+      {
+        "id": 11,
+        "clave": "action.empleados.crud",
+        "nombre": "CRUD Empleados",
+        "tipo": "accion",
+        "descripcion": "Puede crear, editar y eliminar empleados"
+      },
+      {
+        "id": 12,
+        "clave": "action.productos.add",
+        "nombre": "Agregar Producto",
+        "tipo": "accion",
+        "descripcion": "Puede crear productos"
+      },
+      {
+        "id": 13,
+        "clave": "action.productos.edit",
+        "nombre": "Editar Producto",
+        "tipo": "accion",
+        "descripcion": "Puede editar productos"
+      },
+      {
+        "id": 14,
+        "clave": "action.productos.delete",
+        "nombre": "Eliminar Producto",
+        "tipo": "accion",
+        "descripcion": "Puede eliminar productos"
+      },
+      {
+        "id": 15,
+        "clave": "action.productos.crud",
+        "nombre": "CRUD Productos",
+        "tipo": "accion",
+        "descripcion": "Puede crear, editar y eliminar productos"
+      },
+      {
+        "id": 16,
+        "clave": "action.mesas.ocupar",
+        "nombre": "Ocupar mesa",
+        "tipo": "accion",
+        "descripcion": "Puede ocupar mesas"
+      },
+      {
+        "id": 17,
+        "clave": "action.mesas.cerrar",
+        "nombre": "Cerrar mesa",
+        "tipo": "accion",
+        "descripcion": "Puede cerrar mesas"
+      },
+      {
+        "id": 18,
+        "clave": "action.reportes.generar",
+        "nombre": "Generar reportes",
+        "tipo": "accion",
+        "descripcion": "Puede generar reportes"
+      },
+      {
+        "id": 19,
+        "clave": "action.reportes.export.pdf",
+        "nombre": "Exportar PDF",
+        "tipo": "accion",
+        "descripcion": "Puede exportar reportes a PDF"
+      },
+      {
+        "id": 20,
+        "clave": "action.reportes.export.excel",
+        "nombre": "Exportar Excel",
+        "tipo": "accion",
+        "descripcion": "Puede exportar reportes a Excel"
+      },
+      {
+        "id": 21,
+        "clave": "action.reportes.filtros",
+        "nombre": "Usar filtros avanzados",
+        "tipo": "accion",
+        "descripcion": "Puede usar filtros avanzados en reportes"
+      },
+      {
+        "id": 22,
+        "clave": "action.ventas.agregar",
+        "nombre": "Agregar al carrito",
+        "tipo": "accion",
+        "descripcion": "Puede agregar productos al carrito"
+      },
+      {
+        "id": 23,
+        "clave": "action.ventas.limpiar",
+        "nombre": "Limpiar carrito",
+        "tipo": "accion",
+        "descripcion": "Puede limpiar el carrito"
+      },
+      {
+        "id": 24,
+        "clave": "action.ventas.cancelar",
+        "nombre": "Cancelar venta",
+        "tipo": "accion",
+        "descripcion": "Puede cancelar ventas"
+      },
+      {
+        "id": 25,
+        "clave": "action.ventas.procesar",
+        "nombre": "Procesar venta",
+        "tipo": "accion",
+        "descripcion": "Puede procesar ventas"
+      }
+    ],
+    "roles_permisos": [
+      {
+        "role_id": 1,
+        "permiso_id": 1
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 2
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 3
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 4
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 5
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 6
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 7
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 8
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 9
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 10
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 11
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 12
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 13
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 14
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 15
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 16
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 17
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 18
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 19
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 20
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 21
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 22
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 23
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 24
+      },
+      {
+        "role_id": 1,
+        "permiso_id": 25
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 1
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 2
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 4
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 5
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 7
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 15
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 16
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 17
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 18
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 19
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 20
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 21
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 22
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 23
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 24
+      },
+      {
+        "role_id": 2,
+        "permiso_id": 25
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 1
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 4
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 5
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 16
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 17
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 22
+      },
+      {
+        "role_id": 3,
+        "permiso_id": 23
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 1
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 2
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 3
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 5
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 7
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 18
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 19
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 20
+      },
+      {
+        "role_id": 4,
+        "permiso_id": 21
+      }
+    ],
+    "departamentos": [
+      {
+        "id": 1,
+        "nombre": "Cocina",
+        "descripcion": "Área de cocina",
+        "activo": 1
+      },
+      {
+        "id": 2,
+        "nombre": "Caja",
+        "descripcion": "Área de caja",
+        "activo": 1
+      },
+      {
+        "id": 3,
+        "nombre": "Servicio",
+        "descripcion": "Atención a mesas",
+        "activo": 1
+      },
+      {
+        "id": 4,
+        "nombre": "Administración",
+        "descripcion": "Gestión y dirección",
+        "activo": 1
+      }
+    ],
+    "turnos": [
+      {
+        "id": 1,
+        "nombre": "Mañana",
+        "descripcion": "08:00-16:00",
+        "activo": 1
+      },
+      {
+        "id": 2,
+        "nombre": "Tarde",
+        "descripcion": "16:00-00:00",
+        "activo": 1
+      }
+    ],
+    "cargos": [
+      {
+        "id": 1,
+        "nombre": "Cocinero",
+        "descripcion": "Prepara alimentos",
+        "activo": 1
+      },
+      {
+        "id": 2,
+        "nombre": "Cajero",
+        "descripcion": "Gestiona cobros",
+        "activo": 1
+      },
+      {
+        "id": 3,
+        "nombre": "Mesero",
+        "descripcion": "Atiende mesas",
+        "activo": 1
+      }
+    ],
+    "empleados": [
+      {
+        "id": 1,
+        "nombre": "Jhair",
+        "usuario": "jhair",
+        "correo": "jhair@cafeteria.com",
+        "contrasena": "1234",
+        "rol_id": 1,
+        "telefono": "555-0001",
+        "departamento": "Administración",
+        "posicion": "Administrador",
+        "turno": "Mañana",
+        "salario": "10000.00",
+        "estado": "activo",
+        "direccion": "—"
+      },
+      {
+        "id": 2,
+        "nombre": "Sherill",
+        "usuario": "sherill",
+        "correo": "sherill@cafeteria.com",
+        "contrasena": "1234",
+        "rol_id": 2,
+        "telefono": "555-0002",
+        "departamento": "Caja",
+        "posicion": "Cajero",
+        "turno": "Tarde",
+        "salario": "7000.00",
+        "estado": "activo",
+        "direccion": "—"
+      },
+      {
+        "id": 3,
+        "nombre": "Jorge",
+        "usuario": "jorge",
+        "correo": "jorge@cafeteria.com",
+        "contrasena": "1234",
+        "rol_id": 3,
+        "telefono": "555-0003",
+        "departamento": "Servicio",
+        "posicion": "Mesero",
+        "turno": "Mañana",
+        "salario": "6500.00",
+        "estado": "activo",
+        "direccion": "—"
+      },
+      {
+        "id": 4,
+        "nombre": "Diany",
+        "usuario": "diany",
+        "correo": "diany@cafeteria.com",
+        "contrasena": "1234",
+        "rol_id": 4,
+        "telefono": "555-0004",
+        "departamento": "Administración",
+        "posicion": "Supervisor",
+        "turno": "Tarde",
+        "salario": "9000.00",
+        "estado": "activo",
+        "direccion": "—"
+      }
+    ],
+    "productos": [
+      {
+        "id": 1,
+        "nombre": "Café Americano",
+        "categoria": "Bebidas",
+        "precio": "2.50",
+        "stock": 100,
+        "activo": 1,
+        "descripcion": "Taza de café americano",
+        "stock_minimo": 0,
+        "creado_en": "2025-08-28T01:24:27.000Z"
+      },
+      {
+        "id": 2,
+        "nombre": "Capuchino",
+        "categoria": "Bebidas",
+        "precio": "3.50",
+        "stock": 80,
+        "activo": 1,
+        "descripcion": "Café con leche espumosa",
+        "stock_minimo": 0,
+        "creado_en": "2025-08-28T01:24:27.000Z"
+      },
+      {
+        "id": 3,
+        "nombre": "Sandwich",
+        "categoria": "Comidas",
+        "precio": "4.00",
+        "stock": 50,
+        "activo": 1,
+        "descripcion": "Sandwich sencillo",
+        "stock_minimo": 0,
+        "creado_en": "2025-08-28T01:24:27.000Z"
+      },
+      {
+        "id": 4,
+        "nombre": "Pan dulce",
+        "categoria": "Repostería",
+        "precio": "1.20",
+        "stock": 60,
+        "activo": 1,
+        "descripcion": "Pieza de pan dulce",
+        "stock_minimo": 0,
+        "creado_en": "2025-08-28T01:24:27.000Z"
+      }
+    ],
+    "mesas": [
+      {
+        "id": 1,
+        "numero": 1,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-001",
+        "nombre": "Mesa 1",
+        "capacidad": 2,
+        "ubicacion": "interior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 2,
+        "numero": 2,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-002",
+        "nombre": "Mesa 2",
+        "capacidad": 2,
+        "ubicacion": "exterior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 3,
+        "numero": 3,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-003",
+        "nombre": "Mesa 3",
+        "capacidad": 2,
+        "ubicacion": "terraza",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 4,
+        "numero": 4,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-004",
+        "nombre": "Mesa 4",
+        "capacidad": 2,
+        "ubicacion": "interior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 5,
+        "numero": 5,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-005",
+        "nombre": "Mesa 5",
+        "capacidad": 4,
+        "ubicacion": "exterior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 6,
+        "numero": 6,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-006",
+        "nombre": "Mesa 6",
+        "capacidad": 4,
+        "ubicacion": "terraza",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 7,
+        "numero": 7,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-007",
+        "nombre": "Mesa 7",
+        "capacidad": 4,
+        "ubicacion": "interior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 8,
+        "numero": 8,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-008",
+        "nombre": "Mesa 8",
+        "capacidad": 4,
+        "ubicacion": "exterior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 9,
+        "numero": 9,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-009",
+        "nombre": "Mesa 9",
+        "capacidad": 4,
+        "ubicacion": "terraza",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 10,
+        "numero": 10,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-010",
+        "nombre": "Mesa 10",
+        "capacidad": 4,
+        "ubicacion": "interior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 11,
+        "numero": 11,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-011",
+        "nombre": "Mesa 11",
+        "capacidad": 6,
+        "ubicacion": "exterior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 12,
+        "numero": 12,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-012",
+        "nombre": "Mesa 12",
+        "capacidad": 6,
+        "ubicacion": "terraza",
+        "activo": 1,
+        "created_at": "2025-08-28T01:24:27.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 13,
+        "numero": 13,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-013",
+        "nombre": "Mesa 13",
+        "capacidad": 8,
+        "ubicacion": "interior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:35:59.000Z",
+        "updated_at": "2025-08-28T02:27:24.000Z"
+      },
+      {
+        "id": 14,
+        "numero": 14,
+        "estado": "disponible",
+        "detalle": null,
+        "codigo": "MESA-014",
+        "nombre": "Mesa 14",
+        "capacidad": 10,
+        "ubicacion": "interior",
+        "activo": 1,
+        "created_at": "2025-08-28T01:36:54.000Z",
+        "updated_at": "2025-08-28T01:36:54.000Z"
+      }
+    ],
+    "restaurante_config": [
+      {
+        "id": 1,
+        "nombre": "Mi Restaurante",
+        "direccion": null,
+        "telefono": null,
+        "email": null,
+        "iva_porcentaje": "16.00",
+        "propina_automatica": "10.00",
+        "incluir_iva": 1,
+        "horarios": null,
+        "updated_at": "2025-08-28T01:42:48.000Z",
+        "created_at": "2025-08-28T01:42:48.000Z"
+      }
+    ]
+  }
+}

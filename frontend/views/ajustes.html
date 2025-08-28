@@ -17,15 +17,8 @@
                 <i class="fas fa-utensils"></i>
                 <span>Restaurante</span>
             </button>
-            <button class="ajuste-menu-item" data-target="mesas">
-                <i class="fas fa-chair"></i>
-                <span>Mesas</span>
-            </button>
             
-            <button class="ajuste-menu-item" data-target="usuarios">
-                <i class="fas fa-users"></i>
-                <span>Usuarios</span>
-            </button>
+            
             <button class="ajuste-menu-item" data-target="backup">
                 <i class="fas fa-database"></i>
                 <span>Backup</span>
@@ -82,9 +75,11 @@
                             <label for="filtro-permiso">Filtrar permisos</label>
                             <input id="filtro-permiso" class="form-input" placeholder="Buscar por nombre o clave...">
                         </div>
-                        <div class="form-group" style="display:flex; gap:8px;">
+                        <div class="form-group" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                             <button class="btn btn-outline" id="btn-perm-todo" title="Seleccionar todos"><i class="fas fa-check-square"></i></button>
                             <button class="btn btn-outline" id="btn-perm-limpiar" title="Quitar selección"><i class="fas fa-square"></i></button>
+                            <button class="btn btn-outline" id="btn-perm-colapsar" title="Colapsar todos"><i class="fas fa-compress"></i></button>
+                            <button class="btn btn-outline" id="btn-perm-expandir" title="Expandir todos"><i class="fas fa-expand"></i></button>
                             <span class="badge" id="perm-count" title="Seleccionados">0 seleccionados</span>
                         </div>
                     </div>
@@ -104,13 +99,6 @@
                         <div class="form-group">
                             <label for="dep-desc">Descripción</label>
                             <input id="dep-desc" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="switch">
-                                <input type="checkbox" id="dep-activo" checked>
-                                <span class="slider"></span>
-                                <span class="switch-label">Activo</span>
-                            </label>
                         </div>
                         <div class="form-group">
                             <button id="btn-dep-guardar" class="btn btn-primary">Guardar</button>
@@ -147,13 +135,6 @@
                             <input id="tur-desc" class="form-input">
                         </div>
                         <div class="form-group">
-                            <label class="switch">
-                                <input type="checkbox" id="tur-activo" checked>
-                                <span class="slider"></span>
-                                <span class="switch-label">Activo</span>
-                            </label>
-                        </div>
-                        <div class="form-group">
                             <button id="btn-tur-guardar" class="btn btn-primary">Guardar</button>
                             <input type="hidden" id="tur-id">
                         </div>
@@ -188,13 +169,6 @@
                             <input id="car-desc" class="form-input">
                         </div>
                         <div class="form-group">
-                            <label class="switch">
-                                <input type="checkbox" id="car-activo" checked>
-                                <span class="slider"></span>
-                                <span class="switch-label">Activo</span>
-                            </label>
-                        </div>
-                        <div class="form-group">
                             <button id="btn-car-guardar" class="btn btn-primary">Guardar</button>
                             <input type="hidden" id="car-id">
                         </div>
@@ -221,317 +195,163 @@
             <!-- Sección Restaurante -->
             <div id="seccion-restaurante" class="ajuste-seccion">
                 <h2><i class="fas fa-utensils"></i> Configuración del Restaurante</h2>
-                
-                <div class="ajuste-grupo">
-                    <h3>Información Básica</h3>
-                    <div class="form-group">
-                        <label for="nombre-restaurante">Nombre del Restaurante</label>
-                        <input type="text" id="nombre-restaurante" class="form-input" value="Mi Restaurante">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="direccion-restaurante">Dirección</label>
-                        <textarea id="direccion-restaurante" class="form-textarea" rows="2">Av. Principal #123, Ciudad</textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="telefono-restaurante">Teléfono</label>
-                            <input type="tel" id="telefono-restaurante" class="form-input" value="+52 555-123-4567">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="email-restaurante">Email</label>
-                            <input type="email" id="email-restaurante" class="form-input" value="info@mirestaurante.com">
-                        </div>
-                    </div>
-                </div>
+                <p class="section-subtitle">Define la información que también aparecerá en el encabezado de las facturas.</p>
 
-                <div class="ajuste-grupo">
-                    <h3>Horarios de Operación</h3>
-                    <div class="horarios-container">
-                        <div class="horario-item">
-                            <span class="dia-semana">Lunes</span>
-                            <input type="time" class="horario-apertura" value="08:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="22:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
+                <div class="restaurante-grid">
+                    <div class="rest-col-left">
+                        <div class="ajuste-grupo">
+                            <h3>Información Básica</h3>
+                            <div class="form-group">
+                                <label for="nombre-restaurante">Nombre del Restaurante</label>
+                                <input type="text" id="nombre-restaurante" class="form-input" value="Mi Restaurante" placeholder="Ej. Cafetería Central">
+                                <div class="help-text">Nombre comercial que verán tus clientes.</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="direccion-restaurante">Dirección</label>
+                                <textarea id="direccion-restaurante" class="form-textarea" rows="2" placeholder="Calle, número, colonia, ciudad">Av. Principal #123, Ciudad</textarea>
+                                <div class="help-text">Se mostrará en el pie del encabezado.</div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="telefono-restaurante">Teléfono</label>
+                                    <input type="tel" id="telefono-restaurante" class="form-input" value="+52 555-123-4567" placeholder="+52 555 000 0000">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email-restaurante">Email</label>
+                                    <input type="email" id="email-restaurante" class="form-input" value="info@mirestaurante.com" placeholder="contacto@tu-restaurante.com">
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="horario-item">
-                            <span class="dia-semana">Martes</span>
-                            <input type="time" class="horario-apertura" value="08:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="22:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="horario-item">
-                            <span class="dia-semana">Miércoles</span>
-                            <input type="time" class="horario-apertura" value="08:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="22:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="horario-item">
-                            <span class="dia-semana">Jueves</span>
-                            <input type="time" class="horario-apertura" value="08:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="22:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="horario-item">
-                            <span class="dia-semana">Viernes</span>
-                            <input type="time" class="horario-apertura" value="08:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="23:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="horario-item">
-                            <span class="dia-semana">Sábado</span>
-                            <input type="time" class="horario-apertura" value="09:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="23:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="horario-item">
-                            <span class="dia-semana">Domingo</span>
-                            <input type="time" class="horario-apertura" value="09:00">
-                            <span class="horario-separador">-</span>
-                            <input type="time" class="horario-cierre" value="20:00">
-                            <label class="switch horario-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="ajuste-grupo">
-                    <h3>Configuración de Impuestos</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="iva-porcentaje">IVA (%)</label>
-                            <input type="number" id="iva-porcentaje" class="form-input" value="16" min="0" max="100" step="0.1">
+                        <div class="ajuste-grupo">
+                            <h3>Horarios de Operación</h3>
+                            <div class="horarios-container">
+                                <div class="horario-item">
+                                    <span class="dia-semana">Lunes</span>
+                                    <input type="time" class="horario-apertura" value="08:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="22:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="horario-item">
+                                    <span class="dia-semana">Martes</span>
+                                    <input type="time" class="horario-apertura" value="08:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="22:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="horario-item">
+                                    <span class="dia-semana">Miércoles</span>
+                                    <input type="time" class="horario-apertura" value="08:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="22:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="horario-item">
+                                    <span class="dia-semana">Jueves</span>
+                                    <input type="time" class="horario-apertura" value="08:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="22:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="horario-item">
+                                    <span class="dia-semana">Viernes</span>
+                                    <input type="time" class="horario-apertura" value="08:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="23:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="horario-item">
+                                    <span class="dia-semana">Sábado</span>
+                                    <input type="time" class="horario-apertura" value="09:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="23:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="horario-item">
+                                    <span class="dia-semana">Domingo</span>
+                                    <input type="time" class="horario-apertura" value="09:00">
+                                    <span class="horario-separador">a</span>
+                                    <input type="time" class="horario-cierre" value="20:00">
+                                    <label class="switch horario-switch" title="Habilitar día">
+                                        <input type="checkbox" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="propina-automatica">Propina Automática (%)</label>
-                            <input type="number" id="propina-automatica" class="form-input" value="10" min="0" max="50" step="0.1">
+
+                        <div class="ajuste-grupo">
+                            <h3>Configuración de Impuestos</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="iva-porcentaje">IVA (%)</label>
+                                    <input type="number" id="iva-porcentaje" class="form-input" value="16" min="0" max="100" step="0.1">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="propina-automatica">Propina Automática (%)</label>
+                                    <input type="number" id="propina-automatica" class="form-input" value="10" min="0" max="50" step="0.1">
+                                </div>
+                            </div>
+                            
+                            <div class="switch-group">
+                                <label class="switch">
+                                    <input type="checkbox" id="incluir-iva-precios" checked>
+                                    <span class="slider"></span>
+                                    <span class="switch-label">Incluir IVA en precios mostrados</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="switch-group">
-                        <label class="switch">
-                            <input type="checkbox" id="incluir-iva-precios" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Incluir IVA en precios mostrados</span>
-                        </label>
+
+                    <div class="rest-col-right">
+                        <div class="ajuste-grupo preview-factura-card">
+                            <h3>Vista previa del encabezado de factura</h3>
+                            <div class="factura-preview">
+                                <div class="factura-logo" aria-hidden="true"><i class="fas fa-store"></i></div>
+                                <div class="factura-datos">
+                                    <div class="factura-nombre" id="preview-nombre">Mi Restaurante</div>
+                                    <div class="factura-line" id="preview-direccion">Av. Principal #123, Ciudad</div>
+                                    <div class="factura-line" id="preview-contacto">+52 555-123-4567 · info@mirestaurante.com</div>
+                                </div>
+                            </div>
+                            <div class="muted">Esta cabecera se mostrará en tus facturas.</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sección Mesas -->
-            <div id="seccion-mesas" class="ajuste-seccion">
-                <h2><i class="fas fa-chair"></i> Configuración de Mesas</h2>
-                
-                <div class="ajuste-grupo">
-                    <h3>Disposición de Mesas</h3>
-                    <div class="form-group">
-                        <label for="numero-mesas">Número Total de Mesas</label>
-                        <input type="number" id="numero-mesas" class="form-input" value="12" min="1" max="50">
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="mesas-2personas">Mesas para 2 personas</label>
-                            <input type="number" id="mesas-2personas" class="form-input" value="4" min="0">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="mesas-4personas">Mesas para 4 personas</label>
-                            <input type="number" id="mesas-4personas" class="form-input" value="6" min="0">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="mesas-6personas">Mesas para 6 personas</label>
-                            <input type="number" id="mesas-6personas" class="form-input" value="2" min="0">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="mesas-8personas">Mesas para 8+ personas</label>
-                            <input type="number" id="mesas-8personas" class="form-input" value="0" min="0">
-                        </div>
-                    </div>
-                                        <div class="form-actions">
-                                                <button class="btn btn-primary" id="btn-aplicar-disposicion"><i class="fas fa-sync"></i> Aplicar a Mesas</button>
-                                                <label class="checkbox" style="margin-left:8px;">
-                                                    <input type="checkbox" id="mesas-reset"> Reiniciar (desactivar existentes)
-                                                </label>
-                                        </div>
-                </div>
 
-                <div class="ajuste-grupo">
-                    <h3>Tiempos de Servicio</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="tiempo-promedio-comida">Tiempo Promedio Comida (min)</label>
-                            <input type="number" id="tiempo-promedio-comida" class="form-input" value="45" min="15" max="180">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tiempo-promedio-bebidas">Tiempo Promedio Bebidas (min)</label>
-                            <input type="number" id="tiempo-promedio-bebidas" class="form-input" value="20" min="5" max="60">
-                        </div>
-                    </div>
-                    <!-- Campo de tiempo límite de reserva eliminado -->
-                </div>
-
-                <div class="ajuste-grupo">
-                    <h3>Ubicaciones</h3>
-                    <div class="form-group">
-                        <label for="ubicaciones-mesas">Ubicaciones Disponibles</label>
-                        <div class="tags-container">
-                            <span class="tag">Interior <i class="fas fa-times"></i></span>
-                            <span class="tag">Terraza <i class="fas fa-times"></i></span>
-                            <span class="tag">Jardín <i class="fas fa-times"></i></span>
-                            <span class="tag">Privado <i class="fas fa-times"></i></span>
-                        </div>
-                        <div class="tag-input-container">
-                            <input type="text" class="form-input" placeholder="Agregar nueva ubicación...">
-                            <button class="btn btn-sm btn-primary">Agregar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             
-
-            <!-- Sección Usuarios -->
-            <div id="seccion-usuarios" class="ajuste-seccion">
-                <h2><i class="fas fa-users"></i> Gestión de Usuarios</h2>
-                
-                <div class="ajuste-grupo">
-                    <h3>Usuarios del Sistema</h3>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Rol</th>
-                                    <th>Email</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>admin</td>
-                                    <td>Administrador</td>
-                                    <td>admin@restaurante.com</td>
-                                    <td><span class="badge badge-success">Activo</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>mesero01</td>
-                                    <td>Mesero</td>
-                                    <td>mesero01@restaurante.com</td>
-                                    <td><span class="badge badge-success">Activo</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>cocinero01</td>
-                                    <td>Cocinero</td>
-                                    <td>cocinero01@restaurante.com</td>
-                                    <td><span class="badge badge-success">Activo</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <button class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Agregar Usuario
-                    </button>
-                </div>
-
-                <div class="ajuste-grupo">
-                    <h3>Permisos y Roles</h3>
-                    <div class="form-group">
-                        <label for="nuevo-rol">Crear Nuevo Rol</label>
-                        <div class="form-row">
-                            <input type="text" id="nuevo-rol" class="form-input" placeholder="Nombre del rol">
-                            <button class="btn btn-primary">Crear Rol</button>
-                        </div>
-                    </div>
-                    
-                    <div class="permisos-container">
-                        <h4>Permisos Disponibles</h4>
-                        <div class="permisos-list">
-                            <label class="checkbox">
-                                <input type="checkbox" checked> Gestionar mesas
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox"> Gestionar usuarios
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox"> Ver reportes
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" checked> Realizar ventas
-                            </label>
-                            <label class="checkbox">
-                                <input type="checkbox" checked> Modificar menú
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Sección Backup -->
             <div id="seccion-backup" class="ajuste-seccion">
@@ -567,13 +387,17 @@
                             <option value="mensual">Mensual</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="retencion-backup">Mantener últimos (N) backups</label>
+                        <input id="retencion-backup" type="number" min="1" step="1" class="form-input" value="7" />
+                    </div>
                 </div>
 
                 <div class="ajuste-grupo">
                     <h3>Restauración</h3>
                     <div class="form-group">
                         <label for="archivo-backup">Seleccionar Archivo de Backup</label>
-                        <input type="file" id="archivo-backup" class="form-input" accept=".backup,.sql,.zip">
+                        <input type="file" id="archivo-backup" class="form-input" accept=".backup,.sql,.sql.gz,.zip,.gz">
                     </div>
                     
                     <div class="restore-actions">

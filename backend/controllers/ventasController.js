@@ -23,8 +23,10 @@ exports.processSale = async (req, res) => {
         await conn.beginTransaction();
 
         const updated = [];
+        let totalVenta = 0;
+        const itemsDetallados = [];
         for (const it of normalized) {
-            const [rows] = await conn.execute('SELECT id, nombre, stock FROM productos WHERE id = ? FOR UPDATE', [it.id]);
+            const [rows] = await conn.execute('SELECT id, nombre, stock, precio FROM productos WHERE id = ? FOR UPDATE', [it.id]);
             if (!rows.length) {
                 throw Object.assign(new Error(`Producto ${it.id} no encontrado`), { status: 404 });
             }
@@ -34,7 +36,35 @@ exports.processSale = async (req, res) => {
             }
             const nuevo = Number(prod.stock) - it.cantidad;
             await conn.execute('UPDATE productos SET stock = ? WHERE id = ?', [nuevo, it.id]);
+            const precio = Number(prod.precio) || 0;
+            const subtotal = precio * Number(it.cantidad);
+            totalVenta += subtotal;
             updated.push({ id: it.id, nombre: prod.nombre, stock: nuevo });
+            itemsDetallados.push({ id: Number(it.id), nombre: prod.nombre, precio, cantidad: Number(it.cantidad), subtotal });
+        }
+
+        // Guardar un log simple de la venta para reportes
+        const empId = Number(req.body?.empleado_id) || null;
+        const empNombre = req.body?.empleado_nombre || null;
+        const mesaId = Number(req.body?.mesa_id) || null;
+        const mesaCodigo = req.body?.mesa_codigo || (mesaId ? `Mesa ${mesaId}` : null);
+        const payload = {
+            empleado_id: empId,
+            empleado_nombre: empNombre,
+            mesa_id: mesaId,
+            mesa_codigo: mesaCodigo,
+            cliente_nombre: req.body?.cliente_nombre || null,
+            metodo_pago: req.body?.metodo_pago || 'efectivo',
+            total: Number(req.body?.total) || totalVenta,
+            items: itemsDetallados
+        };
+        try {
+            await conn.execute(
+                'INSERT INTO ventas_log (empleado_id, empleado_nombre, mesa_id, mesa_codigo, cliente_nombre, metodo_pago, total, items_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                , [payload.empleado_id, payload.empleado_nombre, payload.mesa_id, payload.mesa_codigo, payload.cliente_nombre, payload.metodo_pago, payload.total, JSON.stringify(payload.items)]
+            );
+        } catch (_) {
+            // no detener la venta si el log falla
         }
 
         await conn.commit();

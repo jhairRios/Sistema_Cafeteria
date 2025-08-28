@@ -43,6 +43,31 @@ export function initVentasRapidas() {
         }
     }
 
+    // Configuración del restaurante (cache local + fetch backend)
+    let restauranteConfig = null;
+    function getRestConfig() {
+        if (restauranteConfig) return restauranteConfig;
+        try {
+            const ls = localStorage.getItem('restauranteConfig');
+            if (ls) restauranteConfig = JSON.parse(ls);
+        } catch {}
+        return restauranteConfig;
+    }
+    async function ensureRestConfig() {
+        const cfg = getRestConfig();
+        if (cfg) return cfg;
+        try {
+            const res = await fetch('/api/restaurante');
+            const data = await res.json();
+            restauranteConfig = data;
+            try { localStorage.setItem('restauranteConfig', JSON.stringify(data)); } catch {}
+            return data;
+        } catch (e) {
+            console.warn('No se pudo obtener config restaurante, usando defaults');
+            return { nombre: 'Mi Restaurante', direccion: '', telefono: '', email: '', iva_porcentaje: 16, propina_automatica: 0, incluir_iva: 1 };
+        }
+    }
+
     // Cargar productos desde API y enlazar eventos
     const grid = document.getElementById('productos-grid');
     loadProductos();
@@ -108,9 +133,16 @@ export function initVentasRapidas() {
     }
 
     function actualizarCarrito() {
-        const subtotal = carrito.reduce((sum, item) => sum + item.subtotal, 0);
-        const impuestos = subtotal * 0.16;
+    const subtotal = carrito.reduce((sum, item) => sum + item.subtotal, 0);
+    const ivaPct = Number((getRestConfig()?.iva_porcentaje ?? 16)) / 100;
+    const impuestos = subtotal * ivaPct;
         total = subtotal + impuestos;
+
+        // Actualizar etiqueta de IVA (ej. "Impuestos (16%):") en la UI
+        if (impuestosElement && impuestosElement.previousElementSibling) {
+            const pct = Math.round((ivaPct || 0) * 100);
+            impuestosElement.previousElementSibling.textContent = `Impuestos (${pct}%):`;
+        }
 
         if (cantidadItems) cantidadItems.textContent = `${carrito.length} items`;
         if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
@@ -238,17 +270,26 @@ export function initVentasRapidas() {
         if (monto < total) return alert('El monto recibido es menor que el total');
         modalPago && (modalPago.style.display = 'none');
         procesarVenta();
-        try { imprimirFacturaYTicket(carrito, total, mesaContext); } catch (e) { console.error('Error al generar impresión:', e); }
+    try { imprimirFacturaYTicket(carrito, total, mesaContext); } catch (e) { console.error('Error al generar impresión:', e); }
     });
 
     async function procesarVenta() {
         try {
             // Construir payload: [{ id, cantidad }]
             const items = carrito.map(it => ({ id: Number(it.id), cantidad: Number(it.cantidad) }));
+            // Metadatos de venta
+            let empleado_nombre = null; let empleado_id = null;
+            try { empleado_nombre = sessionStorage.getItem('nombreUsuario') || null; } catch {}
+            try { const eid = sessionStorage.getItem('empleadoId'); if (eid) empleado_id = Number(eid); } catch {}
+            const mesa_id = mesaContext?.id ? Number(mesaContext.id) : null;
+            const mesa_codigo = mesa_id ? `Mesa ${mesa_id}` : (mesaContext?.numero ? `Mesa ${mesaContext.numero}` : null);
+            const cliente_nombre = mesaContext?.cliente || null;
+            const metodo_pago = 'efectivo';
+            const payload = { items, empleado_id, empleado_nombre, mesa_id, mesa_codigo, cliente_nombre, metodo_pago, total: Number(total)||0 };
             const res = await fetch('/api/ventas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items })
+                body: JSON.stringify(payload)
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
@@ -273,18 +314,21 @@ export function initVentasRapidas() {
     function imprimirFacturaYTicket(items, totalVenta, mesaCtx) {
         const ahora = new Date();
         const folio = 'FAC-' + ahora.getTime();
-        const negocio = 'Cafetería Sistema';
-        const direccion = 'Calle 123, Ciudad';
-        const tel = 'Tel: 555-123-4567';
+        const cfg = getRestConfig() || { nombre: 'Mi Restaurante', direccion: '', telefono: '', email: '', iva_porcentaje: 16 };
+        const negocio = cfg.nombre || 'Mi Restaurante';
+        const direccion = cfg.direccion || '';
+        const tel = cfg.telefono ? ('Tel: ' + cfg.telefono) : '';
 
         const subtotal = items.reduce((s, it) => s + it.subtotal, 0);
-        const impuestos = subtotal * 0.16;
+        const ivaPct = Number(cfg.iva_porcentaje ?? 16) / 100;
+        const impuestos = subtotal * ivaPct;
 
         const mesaMeta = mesaCtx ? `<div class="meta">Mesa ${mesaCtx.id} · ${mesaCtx.cliente || 'Sin nombre'}${mesaCtx.personas ? ' · ' + mesaCtx.personas + ' persona(s)' : ''}</div>` : '';
-        const facturaHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Factura</title><style>@page { size: A5 portrait; margin: 10mm; } body { font-family: Arial, sans-serif; color:#111827; } h1 { font-size: 16px; margin: 0 0 8px; } .header { text-align:center; margin-bottom: 10px; } .meta { font-size: 12px; color:#555; } table { width:100%; border-collapse:collapse; margin-top:8px; } th, td { border-bottom:1px solid #e5e7eb; padding:6px; font-size:12px; text-align:left; } th { background:#f9fafb; } .totales { margin-top:8px; } .totales div { display:flex; justify-content:space-between; font-size:13px; margin-top:4px; } .final { font-weight:700; } .footer { margin-top:10px; text-align:center; font-size:11px; color:#6b7280; } @media print { .no-print { display:none; } } .no-print { margin-top: 10px; } button { padding:6px 10px; }</style></head><body><div class="header"><h1>${negocio}</h1><div class="meta">${direccion} · ${tel}</div><div class="meta">Folio: ${folio} · ${ahora.toLocaleString()}</div>${mesaMeta}</div><table><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>${items.map(i => `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio.toFixed(2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="totales"><div><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></div><div><span>Impuestos (16%):</span><span>$${impuestos.toFixed(2)}</span></div><div class="final"><span>Total:</span><span>$${totalVenta.toFixed(2)}</span></div></div><div class="footer">¡Gracias por su compra!</div><div class="no-print" style="text-align:center"><button onclick="window.print()">Imprimir</button></div></body></html>`;
+        const contactoLinea = [direccion, tel].filter(Boolean).join(' · ');
+        const facturaHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Factura</title><style>@page { size: A5 portrait; margin: 10mm; } body { font-family: Arial, sans-serif; color:#111827; } h1 { font-size: 16px; margin: 0 0 8px; } .header { text-align:center; margin-bottom: 10px; } .meta { font-size: 12px; color:#555; } table { width:100%; border-collapse:collapse; margin-top:8px; } th, td { border-bottom:1px solid #e5e7eb; padding:6px; font-size:12px; text-align:left; } th { background:#f9fafb; } .totales { margin-top:8px; } .totales div { display:flex; justify-content:space-between; font-size:13px; margin-top:4px; } .final { font-weight:700; } .footer { margin-top:10px; text-align:center; font-size:11px; color:#6b7280; } @media print { .no-print { display:none; } } .no-print { margin-top: 10px; } button { padding:6px 10px; }</style></head><body><div class="header"><h1>${negocio}</h1><div class="meta">${contactoLinea}</div><div class="meta">Folio: ${folio} · ${ahora.toLocaleString()}</div>${mesaMeta}</div><table><thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>${items.map(i => `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio.toFixed(2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="totales"><div><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></div><div><span>Impuestos (${Math.round(ivaPct*100)}%):</span><span>$${impuestos.toFixed(2)}</span></div><div class="final"><span>Total:</span><span>$${totalVenta.toFixed(2)}</span></div></div><div class="footer">¡Gracias por su compra!</div><div class="no-print" style="text-align:center"><button onclick="window.print()">Imprimir</button></div></body></html>`;
 
         const mesaLinea = mesaCtx ? `<div>Mesa ${mesaCtx.id} · ${mesaCtx.cliente || ''}</div>` : '';
-        const ticketHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Ticket Cocina</title><style>@page { size: 80mm auto; margin: 5mm; } body { font-family: monospace; font-size: 12px; color:#111; } .hdr { text-align:center; } .line { border-top:1px dashed #000; margin:6px 0; } .item { display:flex; justify-content:space-between; } .strong { font-weight:700; } @media print { .no-print { display:none; } }</style></head><body><div class="hdr"><div class="strong">Ticket Cocina</div><div>${negocio}</div><div>${ahora.toLocaleString()}</div>${mesaLinea}</div><div class="line"></div>${items.map(i => `<div class="item"><span>${i.cantidad} x ${i.nombre}</span><span>$${i.subtotal.toFixed(2)}</span></div>`).join('')}<div class="line"></div><div>Total: $${totalVenta.toFixed(2)}</div><div class="no-print" style="text-align:center; margin-top:8px"><button onclick="window.print()">Imprimir</button></div></body></html>`;
+    const ticketHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Ticket Cocina</title><style>@page { size: 80mm auto; margin: 5mm; } body { font-family: monospace; font-size: 12px; color:#111; } .hdr { text-align:center; } .line { border-top:1px dashed #000; margin:6px 0; } .item { display:flex; justify-content:space-between; } .strong { font-weight:700; } @media print { .no-print { display:none; } }</style></head><body><div class="hdr"><div class="strong">Ticket Cocina</div><div>${negocio}</div><div>${ahora.toLocaleString()}</div>${mesaLinea}</div><div class="line"></div>${items.map(i => `<div class="item"><span>${i.cantidad} x ${i.nombre}</span><span>$${i.subtotal.toFixed(2)}</span></div>`).join('')}<div class="line"></div><div>Total: $${totalVenta.toFixed(2)}</div><div class="no-print" style="text-align:center; margin-top:8px"><button onclick="window.print()">Imprimir</button></div></body></html>`;
 
         abrirVentanaImpresion(facturaHtml, 'Factura');
         abrirVentanaImpresion(ticketHtml, 'TicketCocina');
@@ -346,5 +390,11 @@ export function initVentasRapidas() {
         });
     }
 
-    actualizarCarrito();
+    // Cargar config al iniciar y escuchar actualizaciones desde Ajustes
+    ensureRestConfig().then(() => actualizarCarrito());
+    window.addEventListener('restauranteConfigUpdated', (ev) => {
+        restauranteConfig = ev?.detail || restauranteConfig;
+        try { localStorage.setItem('restauranteConfig', JSON.stringify(restauranteConfig)); } catch {}
+        actualizarCarrito();
+    });
 }

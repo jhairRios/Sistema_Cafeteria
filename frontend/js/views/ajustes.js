@@ -29,6 +29,51 @@ export function initAjustes() {
   };
   const renderRows = (tbody, items, mapRow) => { if (tbody) tbody.innerHTML = (items||[]).map(mapRow).join('') || '<tr><td colspan="5">Sin registros</td></tr>'; };
 
+  // Humanización de permisos (CRUD -> Crear/Ver/Editar/Eliminar)
+  const moduloNames = {
+    productos: 'Productos', ventas: 'Ventas', mesas: 'Mesas', empleados: 'Empleados',
+    reportes: 'Reportes', ajustes: 'Ajustes', restaurante: 'Restaurante', roles: 'Roles',
+    permisos: 'Permisos', catalogos: 'Catálogos', departamentos: 'Departamentos', turnos: 'Turnos', cargos: 'Cargos', backup: 'Backup'
+  };
+  function humanizeModule(key='') {
+    return moduloNames[key] || (key ? key.charAt(0).toUpperCase()+key.slice(1) : '');
+  }
+  function humanizeType(tipo) { return tipo === 'view' ? 'Vista' : 'Acción'; }
+  function humanizeAction(raw='') {
+    const a = String(raw).toLowerCase();
+    if ([ 'crear', 'create', 'agregar', 'nuevo', 'alta' ].includes(a)) return 'Crear';
+    if ([ 'leer', 'read', 'ver', 'listar' ].includes(a)) return 'Ver';
+    if ([ 'actualizar', 'update', 'editar', 'modificar' ].includes(a)) return 'Editar';
+    if ([ 'eliminar', 'delete', 'borrar', 'remover' ].includes(a)) return 'Eliminar';
+    if (a === 'procesar') return 'Procesar';
+    if (a === 'cancelar') return 'Cancelar';
+    if (a === 'limpiar') return 'Limpiar';
+    if (a === 'imprimir') return 'Imprimir';
+    if (a === 'schedule' || a === 'programar') return 'Programar';
+    if (a === 'restore' || a === 'restaurar') return 'Restaurar';
+    if (a === 'create_backup' || a === 'backup' || a === 'createbackup') return 'Crear backup';
+    return raw ? raw.charAt(0).toUpperCase()+raw.slice(1) : '';
+  }
+  function humanizePerm(p) {
+    // Esperado: clave tipo.modulo[.accion]
+    const clave = p?.clave || '';
+    const parts = clave.split('.');
+    const tipo = parts[0] || p?.tipo || '';
+    const modulo = parts[1] || '';
+    const accion = parts[2] || '';
+    const tt = humanizeType(tipo);
+    if (tipo === 'view') {
+      return { label: `Ver ${humanizeModule(modulo)}`, tipoText: tt };
+    }
+    if (tipo === 'action') {
+      const act = humanizeAction(accion);
+      // Formato: Modulo: Acción
+      return { label: `${humanizeModule(modulo)}: ${act}`, tipoText: tt };
+    }
+    // Fallback al nombre existente si no coincide patrón
+    return { label: p?.nombre || clave, tipoText: tt || (p?.tipo || '') };
+  }
+
   // 1) Roles CRUD
   const rolId = qs('#rol-id');
   const rolNombre = qs('#rol-nombre');
@@ -98,12 +143,10 @@ export function initAjustes() {
   const btnGuardarPerms = qs('#btn-guardar-permisos');
 
   async function loadPermisosDisponibles() {
-    const all = await api.get('/api/permisos');
+  const raw = await api.get('/api/permisos');
+  const all = (raw||[]).map(p => { const h = humanizePerm(p); return { ...p, uiLabel: h.label, uiTipo: h.tipoText }; });
   permisosContainer.dataset.all = JSON.stringify(all);
-  permisosContainer.innerHTML = all.map(p => `
-      <label class="checkbox permiso-item">
-        <input type="checkbox" data-clave="${p.clave}" data-id="${p.id}"> ${p.nombre} <span class="badge">${p.tipo}</span>
-      </label>`).join('');
+  renderPermisosList(all);
   actualizarContadorPermisos();
   }
 
@@ -147,13 +190,51 @@ export function initAjustes() {
   filtroPerm?.addEventListener('input', () => {
     const term = (filtroPerm.value||'').toLowerCase();
     const all = JSON.parse(permisosContainer.dataset.all||'[]');
-    const filtrados = all.filter(p => (p.nombre||'').toLowerCase().includes(term) || (p.clave||'').toLowerCase().includes(term));
-    permisosContainer.innerHTML = filtrados.map(p => `
-      <label class="checkbox permiso-item">
-        <input type="checkbox" data-clave="${p.clave}" data-id="${p.id}"> ${p.nombre} <span class="badge">${p.tipo}</span>
-      </label>`).join('');
+    const filtrados = all.filter(p => (p.uiLabel||'').toLowerCase().includes(term) || (p.clave||'').toLowerCase().includes(term));
+    renderPermisosList(filtrados);
     // Re-sincronizar con rol seleccionado actual
     syncPermisosRol().then(() => actualizarContadorPermisos());
+  });
+
+  function groupByModule(perms) {
+    const groups = {};
+    (perms||[]).forEach(p => {
+      const clave = p?.clave || '';
+      const modulo = (clave.split('.')[1]) || 'otros';
+      const key = modulo.toLowerCase();
+      if (!groups[key]) groups[key] = { modulo: key, nombre: humanizeModule(key), items: [] };
+      groups[key].items.push(p);
+    });
+    // Ordenar por nombre
+    return Object.values(groups).sort((a,b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+
+  function renderPermisosList(perms) {
+    const groups = groupByModule(perms);
+    permisosContainer.innerHTML = groups.map(g => `
+      <div class="permiso-group" data-modulo="${g.modulo}">
+        <div class="permiso-group-header">
+          <div class="permiso-group-title"><i class="fas fa-folder"></i> ${g.nombre}</div>
+          <div class="permiso-group-meta"><span class="permiso-group-count">${g.items.length}</span><i class="fas fa-chevron-down chev"></i></div>
+        </div>
+        <div class="permiso-group-body">
+          ${g.items.map(p => `
+            <label class="checkbox permiso-item">
+              <input type="checkbox" data-clave="${p.clave}" data-id="${p.id}"> ${p.uiLabel} <span class="badge">${p.uiTipo}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Toggle de grupos (acordeón)
+  permisosContainer?.addEventListener('click', (e) => {
+    const header = e.target.closest('.permiso-group-header');
+    if (!header) return;
+    const group = header.closest('.permiso-group');
+    if (!group) return;
+    group.classList.toggle('collapsed');
   });
 
   qs('#btn-perm-todo')?.addEventListener('click', (e) => {
@@ -161,6 +242,12 @@ export function initAjustes() {
   });
   qs('#btn-perm-limpiar')?.addEventListener('click', (e) => {
     e.preventDefault(); qsa('.permiso-item input').forEach(i => i.checked = false); actualizarContadorPermisos();
+  });
+  qs('#btn-perm-colapsar')?.addEventListener('click', (e) => {
+    e.preventDefault(); qsa('.permiso-group').forEach(g => g.classList.add('collapsed'));
+  });
+  qs('#btn-perm-expandir')?.addEventListener('click', (e) => {
+    e.preventDefault(); qsa('.permiso-group').forEach(g => g.classList.remove('collapsed'));
   });
 
   qs('#btn-copiar-permisos')?.addEventListener('click', async (e) => {
@@ -180,7 +267,7 @@ export function initAjustes() {
     const nombreEl = qs(`#${prefix}-nombre`);
     const descEl = qs(`#${prefix}-desc`);
   const btn = qs(`#btn-${prefix}-guardar`);
-  const activoEl = qs(`#${prefix}-activo`);
+  const activoEl = null; // checkbox eliminado en UI; manejar activo con acciones de tabla
     const tbody = qs(tbodySel);
     const filtroActivo = qs(`#${prefix}-filtro-activo`);
     const list = async () => api.get(`/api/catalogos/${endpoint}`);
@@ -217,7 +304,7 @@ export function initAjustes() {
           idEl.value = r.id;
           nombreEl.value = r.nombre || '';
           descEl.value = r.descripcion || '';
-          if (activoEl) activoEl.checked = Number(r.activo) === 1;
+          // activo se gestiona desde el botón de acciones (toggle)
         });
         tr.querySelector('.del')?.addEventListener('click', async () => {
           if (!confirm('¿Eliminar registro?')) return;
@@ -232,11 +319,16 @@ export function initAjustes() {
       });
     }
     btn?.addEventListener('click', async () => {
-      const payload = { nombre: nombreEl.value.trim(), descripcion: (descEl.value||'').trim(), activo: activoEl && activoEl.checked ? 1 : 0 };
+      const payload = { nombre: nombreEl.value.trim(), descripcion: (descEl.value||'').trim() };
       if (!payload.nombre) return alert('Nombre es requerido');
       const id = idEl.value;
-      if (id) await update(id, payload); else await create(payload);
-      idEl.value=''; nombreEl.value=''; descEl.value=''; if (activoEl) activoEl.checked = true;
+      if (id) {
+        await update(id, payload);
+      } else {
+        // Al crear, activo=1 por defecto en backend o explícito aquí si el endpoint lo requiere
+        await create({ ...payload, activo: 1 });
+      }
+      idEl.value=''; nombreEl.value=''; descEl.value='';
       await load();
     });
     filtroActivo?.addEventListener('change', load);
@@ -248,6 +340,24 @@ export function initAjustes() {
   const carModule = catalogFactory('car', 'cargos', '#tabla-car tbody');
 
   // 4) Restaurante: cargar/guardar configuración
+  function actualizarPreviewFactura() {
+    const nombre = qs('#nombre-restaurante')?.value?.trim() || 'Mi Restaurante';
+    const dir = qs('#direccion-restaurante')?.value?.trim() || '';
+    const tel = qs('#telefono-restaurante')?.value?.trim() || '';
+    const em = qs('#email-restaurante')?.value?.trim() || '';
+    const elNombre = document.getElementById('preview-nombre');
+    const elDir = document.getElementById('preview-direccion');
+    const elContacto = document.getElementById('preview-contacto');
+    if (elNombre) elNombre.textContent = nombre;
+    if (elDir) elDir.textContent = dir;
+    if (elContacto) {
+      const parts = [];
+      if (tel) parts.push(tel);
+      if (em) parts.push(em);
+      elContacto.textContent = parts.join(' · ');
+    }
+  }
+
   async function loadRestaurante() {
     try {
       const cfg = await api.get('/api/restaurante');
@@ -259,6 +369,11 @@ export function initAjustes() {
       setVal('#iva-porcentaje', cfg.iva_porcentaje ?? 16);
       setVal('#propina-automatica', cfg.propina_automatica ?? 10);
       const inc = qs('#incluir-iva-precios'); if (inc) inc.checked = Number(cfg.incluir_iva ?? 1) === 1;
+      // Cachear en localStorage y en memoria global
+      try { localStorage.setItem('restauranteConfig', JSON.stringify(cfg)); } catch {}
+      window.__restauranteConfig = cfg;
+      // Actualizar vista previa
+      actualizarPreviewFactura();
       // Horarios: si existieran, podríamos mapearlos aquí (dejamos como enhancement futuro)
     } catch (e) {
       console.warn('No se pudo cargar configuración de restaurante:', e?.message);
@@ -275,7 +390,13 @@ export function initAjustes() {
       propina_automatica: Number(qs('#propina-automatica')?.value || 10),
       incluir_iva: qs('#incluir-iva-precios')?.checked ? 1 : 0,
     };
-    await api.put('/api/restaurante', payload);
+    const saved = await api.put('/api/restaurante', payload);
+    // Persistir en cache y emitir evento para otras vistas
+    try { localStorage.setItem('restauranteConfig', JSON.stringify(saved)); } catch {}
+    window.__restauranteConfig = saved;
+    try { window.dispatchEvent(new CustomEvent('restauranteConfigUpdated', { detail: saved })); } catch {}
+    actualizarPreviewFactura();
+    return saved;
   }
 
   qs('#btn-guardar-ajustes')?.addEventListener('click', async () => {
@@ -286,6 +407,10 @@ export function initAjustes() {
       alert('Error al guardar ajustes: ' + (e?.message || ''));
     }
   });
+
+  // Enlazar inputs a la vista previa de factura
+  ['#nombre-restaurante','#direccion-restaurante','#telefono-restaurante','#email-restaurante']
+    .forEach(sel => { const el = qs(sel); if (el) el.addEventListener('input', actualizarPreviewFactura, true); });
 
   // 5) Mesas: aplicar disposición
   qs('#btn-aplicar-disposicion')?.addEventListener('click', async () => {

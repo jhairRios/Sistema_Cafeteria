@@ -1822,6 +1822,141 @@ tr:hover {
   animation: fadeIn 0.3s ease;
 }
 
+/* Tarjetas y tipografía dentro de Ajustes/General */
+#seccion-general .ajuste-grupo {
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+#seccion-general .ajuste-grupo h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#seccion-general .ajuste-grupo h3::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: #eef2f7;
+  margin-left: 0.5rem;
+}
+
+/* Grid de permisos como chips */
+#seccion-general .permisos-list {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+/* Grupo de permisos (acordeón) */
+#seccion-general .permiso-group { border: 1px solid #e8edf5; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+#seccion-general .permiso-group-header { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#f7f9ff; cursor:pointer; }
+#seccion-general .permiso-group-title { font-weight:600; color:#1f2937; display:flex; gap:8px; align-items:center; }
+#seccion-general .permiso-group-meta { display:flex; gap:10px; align-items:center; color:#6b7280; }
+#seccion-general .permiso-group-meta .permiso-group-count { background:#eef2ff; color:#3746d4; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; }
+#seccion-general .permiso-group-header .chev { transition: transform .15s ease; }
+#seccion-general .permiso-group.collapsed .permiso-group-header .chev { transform: rotate(-90deg); }
+#seccion-general .permiso-group.collapsed .permiso-group-body { display: none; }
+#seccion-general .permiso-group-body { padding: 10px; display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:10px; background:#fff; }
+
+#seccion-general .permiso-item { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #e8edf5; border-radius:10px; background:#fafbff; cursor:pointer; transition: background .15s ease, border-color .15s ease, transform .05s ease; user-select:none; }
+#seccion-general .permiso-item:hover { background:#f3f6ff; border-color:#dfe7fb; }
+#seccion-general .permiso-item:active { transform: translateY(1px); }
+#seccion-general .permiso-item input[type="checkbox"]{ width:16px; height:16px; }
+#seccion-general .permiso-item .badge { margin-left:auto; font-weight:700; border-radius:20px; padding:2px 8px; }
+
+/* Barra de controles de permisos más compacta en desktop */
+#seccion-general .form-row {
+  align-items: end;
+}
+
+/* Tablas dentro de Ajustes: filas compactas y acciones visibles */
+#seccion-general .data-table th, #seccion-general .data-table td {
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+#seccion-general .data-table td .btn {
+  margin-right: 6px;
+}
+
+/* Subtítulo de sección */
+.section-subtitle {
+  color: #6b7280;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Layout específico: Restaurante en Ajustes */
+.restaurante-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr;
+  gap: 1.5rem;
+}
+
+.rest-col-right {
+  position: sticky;
+  top: calc(var(--header-height) + 16px);
+  height: fit-content;
+}
+
+.preview-factura-card .factura-preview {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px dashed #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.factura-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--color-primario) 0%, #6e8bff 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 6px 14px rgba(76, 110, 245, 0.25);
+}
+
+.factura-datos { line-height: 1.35; }
+.factura-nombre { font-weight: 600; font-size: 1.05rem; }
+.factura-line { color: #4b5563; font-size: 0.95rem; }
+
+.help-text { color: #6b7280; font-size: 0.9rem; margin-top: 0.35rem; }
+
+/* Horarios refinados */
+.horarios-container { display: grid; gap: 10px; }
+.horario-item {
+  display: grid;
+  grid-template-columns: 120px 1fr auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.horario-separador { color: #6b7280; }
+.horario-switch { margin-left: auto; }
+
+@media (max-width: 1024px) {
+  .restaurante-grid { grid-template-columns: 1fr; }
+  .rest-col-right { position: static; }
+}
+
 /* ============================
    RESPONSIVE
    ============================ */
