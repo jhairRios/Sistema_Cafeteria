@@ -59,6 +59,11 @@ async function loadLowStock() {
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 async function loadMesasDashboard() {
+  // Evaluar permisos en el alcance de esta función
+  let permisos = [];
+  try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
+  const canOcupar = permisos.includes('action.mesas.ocupar');
+  const canCerrar = permisos.includes('action.mesas.cerrar');
   const grid = document.getElementById('home-grid-mesas');
   const elDisp = document.getElementById('home-mesas-disponibles');
   const elOc = document.getElementById('home-mesas-ocupadas');
@@ -91,12 +96,12 @@ async function loadMesasDashboard() {
       const estadoBadge = m.estado === 'ocupada'
         ? '<div class="mesa-estado estado-ocupada">Ocupada</div>'
         : '<div class="mesa-estado estado-disponible">Disponible</div>';
-        const acciones = m.estado === 'ocupada'
+    const acciones = m.estado === 'ocupada'
           ? `<div class="mesa-actions">
                <button class="btn btn-sm btn-info btn-ver-mesa" data-id="${m.id}"><i class="fas fa-eye"></i> Ver</button>
-               <button class="btn btn-sm btn-primary btn-cerrar-mesa" data-id="${m.id}"><i class="fas fa-check"></i> Cerrar</button>
+         ${canCerrar ? `<button class=\"btn btn-sm btn-primary btn-cerrar-mesa\" data-id=\"${m.id}\"><i class=\"fas fa-check\"></i> Cerrar</button>` : ''}
              </div>`
-          : `<div class="mesa-actions"><button class="btn btn-sm btn-success btn-ocupar-mesa" data-id="${m.id}"><i class="fas fa-play"></i> Ocupar</button></div>`;
+        : `<div class="mesa-actions">${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar-mesa\" data-id=\"${m.id}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}</div>`;
       return `
         <div class="mesa-card ${estadoClase}" data-id="${m.id}" data-estado="${m.estado}" data-capacidad="${m.capacidad}">
           <div class="mesa-numero">Mesa ${m.numero}</div>
@@ -165,6 +170,7 @@ async function loadMesasDashboard() {
       const mesaId = card?.dataset?.id;
       if (!mesaId) return;
       if (btnCerrar) {
+        if (!canCerrar) return;
         if (!confirm('¿Estás seguro de que quieres cerrar esta mesa?')) return;
         try {
           await MesasAPI.setEstado(mesaId, 'disponible', {});
@@ -181,6 +187,7 @@ async function loadMesasDashboard() {
           alert('No se pudo cerrar la mesa. Intenta de nuevo.');
         }
       } else if (btnOcupar) {
+        if (!canOcupar) return;
         // Abrir modal para capturar datos en lugar de prompts
         abrirModalOcupar(mesaId);
       } else if (btnVer) {

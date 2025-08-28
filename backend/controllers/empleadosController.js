@@ -7,7 +7,7 @@ exports.getAll = async (req, res) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      `SELECT id, nombre, correo, telefono, departamento, posicion, turno, salario, estado, direccion
+  `SELECT id, nombre, usuario, rol_id, correo, telefono, departamento, posicion, turno, salario, estado, direccion
        FROM empleados
        ORDER BY id DESC`
     );
@@ -22,7 +22,7 @@ exports.getById = async (req, res) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      `SELECT id, nombre, correo, telefono, departamento, posicion, turno, salario, estado, direccion
+      `SELECT id, nombre, usuario, rol_id, correo, telefono, departamento, posicion, turno, salario, estado, direccion, contrasena
        FROM empleados WHERE id = ? LIMIT 1`,
       [req.params.id]
     );
@@ -84,7 +84,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   const { id } = req.params;
-  const { nombre, correo, telefono, departamento, posicion, turno, salario, estado, direccion } = req.body || {};
+  const { nombre, correo, telefono, departamento, posicion, turno, salario, estado, direccion, usuario, rol_id, contrasena } = req.body || {};
   try {
     const pool = getPool();
     const correoNorm = correo != null ? String(correo).trim().toLowerCase() : null;
@@ -99,13 +99,28 @@ exports.update = async (req, res) => {
         return res.status(409).json({ message: 'El correo ya está registrado', field: 'correo' });
       }
     }
-    await pool.execute(
-      `UPDATE empleados SET nombre = ?, correo = ?, telefono = ?, departamento = ?, posicion = ?, turno = ?, salario = ?, estado = ?, direccion = ?
-       WHERE id = ?`,
-      [nombre, correoNorm, telefono || null, departamento || null, posicion || null, turno || null, salario || 0, estado || 'activo', direccion || null, id]
-    );
+    // Construir SET dinámico según campos provistos
+    const sets = [];
+    const params = [];
+    const push = (clause, val) => { sets.push(clause); params.push(val); };
+    if (nombre !== undefined) push('nombre = ?', nombre);
+    if (correo !== undefined) push('correo = ?', correoNorm);
+    if (telefono !== undefined) push('telefono = ?', telefono || null);
+    if (departamento !== undefined) push('departamento = ?', departamento || null);
+    if (posicion !== undefined) push('posicion = ?', posicion || null);
+    if (turno !== undefined) push('turno = ?', turno || null);
+    if (salario !== undefined) push('salario = ?', salario || 0);
+    if (estado !== undefined) push('estado = ?', estado || 'activo');
+    if (direccion !== undefined) push('direccion = ?', direccion || null);
+    if (usuario !== undefined) push('usuario = ?', usuario || null);
+    if (rol_id !== undefined) push('rol_id = ?', Number(rol_id) || 1);
+    if (contrasena) push('contrasena = ?', String(contrasena)); // solo si viene no vacío
+    if (!sets.length) return res.json({ success: true });
+    const sql = `UPDATE empleados SET ${sets.join(', ')} WHERE id = ?`;
+    params.push(id);
+    await pool.execute(sql, params);
     const [rows] = await pool.execute(
-      `SELECT id, nombre, correo, telefono, departamento, posicion, turno, salario, estado, direccion
+      `SELECT id, nombre, usuario, rol_id, correo, telefono, departamento, posicion, turno, salario, estado, direccion
        FROM empleados WHERE id = ?`,
       [id]
     );

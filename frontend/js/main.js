@@ -103,22 +103,44 @@ function setupSidebar() {
 
 function setupNavigation() {
   const navButtons = document.querySelectorAll('.nav-btn');
-  // Ocultar según permisos
-  try {
-    const permisos = JSON.parse(sessionStorage.getItem('permisos') || '[]');
-    const viewPerm = (view) => `view.${view}`;
-    navButtons.forEach(btn => {
-      const viewName = btn.getAttribute('data-view');
-      if (!permisos.includes(viewPerm(viewName))) {
-        btn.style.display = 'none';
-      }
-    });
-  } catch(_) {}
+  // Función para aplicar permisos actuales al menú
+  function applyMenuPermissions() {
+    try {
+      const permisos = JSON.parse(sessionStorage.getItem('permisos') || '[]');
+      const viewPerm = (view) => `view.${view}`;
+      navButtons.forEach(btn => {
+        const viewName = btn.getAttribute('data-view');
+        const allow = permisos.includes(viewPerm(viewName));
+        btn.style.display = allow ? '' : 'none';
+      });
+    } catch(_) {}
+  }
+  function canView(viewName) {
+    try {
+      const permisos = JSON.parse(sessionStorage.getItem('permisos') || '[]');
+      return permisos.includes(`view.${viewName}`);
+    } catch (_) { return false; }
+  }
+  // Aplicar al inicio y al recibir evento de actualización de permisos
+  applyMenuPermissions();
+  window.addEventListener('permisosActualizados', applyMenuPermissions);
+  window.addEventListener('permisosActualizados', () => {
+    // Si la vista actual quedó sin permiso, regresar a home
+    const view = state.currentView;
+    if (view && !canView(view)) {
+      const homeBtn = document.querySelector('.nav-btn[data-view="home"]');
+      homeBtn && homeBtn.click();
+    }
+  });
   navButtons.forEach((button) => {
     button.addEventListener('click', (e) => {
       e.preventDefault();
       const viewName = button.getAttribute('data-view');
       if (!viewName) return;
+      if (!canView(viewName)) {
+        alert('No tienes permiso para ver esta sección');
+        return;
+      }
       navButtons.forEach((b) => b.classList.remove('active'));
       button.classList.add('active');
       loadView(viewName);
@@ -134,6 +156,18 @@ function setupNavigation() {
 }
 
 async function loadView(viewName) {
+  // Bloquear carga si no hay permiso
+  try {
+    const permisos = JSON.parse(sessionStorage.getItem('permisos') || '[]');
+    if (!permisos.includes(`view.${viewName}`)) {
+      // Permitir home como fallback si no hay permisos
+      if (viewName !== 'home') {
+        const homeBtn = document.querySelector('.nav-btn[data-view="home"]');
+        if (homeBtn) { homeBtn.classList.add('active'); }
+        return loadView('home');
+      }
+    }
+  } catch (_) {}
   state.currentView = viewName;
   const root = await loadViewHtml(viewName);
   enhanceAllSelects(root);

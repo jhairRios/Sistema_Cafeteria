@@ -1,6 +1,12 @@
 // js/views/reportes.js
 export function initReportes() {
   console.log('Inicializando vista Reportes');
+  let permisos = [];
+  try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
+  const canGenerar = permisos.includes('action.reportes.generar');
+  const canExportPdf = permisos.includes('action.reportes.export.pdf');
+  const canExportExcel = permisos.includes('action.reportes.export.excel');
+  const canFiltros = permisos.includes('action.reportes.filtros');
 
   const btnGenerarReporte = document.getElementById('btn-generar-reporte');
   const btnExportarPDF = document.getElementById('btn-exportar-pdf');
@@ -18,20 +24,26 @@ export function initReportes() {
 
   inicializarGraficos();
 
-  btnGenerarReporte?.addEventListener('click', generarReporte);
-  btnExportarPDF?.addEventListener('click', exportarPDF);
-  btnExportarExcel?.addEventListener('click', exportarExcel);
+  if (btnGenerarReporte) btnGenerarReporte.style.display = canGenerar ? '' : 'none';
+  if (btnExportarPDF) btnExportarPDF.style.display = canExportPdf ? '' : 'none';
+  if (btnExportarExcel) btnExportarExcel.style.display = canExportExcel ? '' : 'none';
+  if (btnFiltrosAvanzados) btnFiltrosAvanzados.style.display = canFiltros ? '' : 'none';
+
+  btnGenerarReporte?.addEventListener('click', () => { if (!canGenerar) return; generarReporte(); });
+  btnExportarPDF?.addEventListener('click', () => { if (!canExportPdf) return; exportarPDF(); });
+  btnExportarExcel?.addEventListener('click', () => { if (!canExportExcel) return; exportarExcel(); });
 
   if (btnFiltrosAvanzados && panelFiltrosAvanzados) {
     btnFiltrosAvanzados.addEventListener('click', () => {
+      if (!canFiltros) return;
       const isVisible = panelFiltrosAvanzados.style.display === 'block';
       panelFiltrosAvanzados.style.display = isVisible ? 'none' : 'block';
       btnFiltrosAvanzados.innerHTML = isVisible ? '<i class="fas fa-filter"></i> Filtros Avanzados' : '<i class="fas fa-times"></i> Ocultar Filtros';
     });
   }
 
-  btnAplicarFiltros?.addEventListener('click', aplicarFiltrosAvanzados);
-  btnLimpiarFiltros?.addEventListener('click', limpiarFiltros);
+  btnAplicarFiltros?.addEventListener('click', () => { if (!canFiltros) return; aplicarFiltrosAvanzados(); });
+  btnLimpiarFiltros?.addEventListener('click', () => { if (!canFiltros) return; limpiarFiltros(); });
 
   if (rangoFecha && fechasPersonalizadas && fechasPersonalizadasHasta) {
     rangoFecha.addEventListener('change', function () {
@@ -51,7 +63,7 @@ export function initReportes() {
     });
   });
 
-  setTimeout(() => { generarReporte(); }, 1000);
+  setTimeout(() => { if (canGenerar) generarReporte(); }, 1000);
 
   function inicializarGraficos() {
     console.log('Inicializando gráficos...');

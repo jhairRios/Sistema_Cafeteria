@@ -14,14 +14,16 @@ async function run() {
     console.error('No existe el archivo:', sqlPath);
     process.exit(1);
   }
-  const sql = fs.readFileSync(sqlPath, 'utf8');
+  let sql = fs.readFileSync(sqlPath, 'utf8');
+  // Eliminar comentarios tipo '-- ...' por línea para no interferir con el split
+  sql = sql.replace(/^--.*$/gm, '');
   try {
     await initPool();
     const pool = getPool();
     const statements = sql
-      .split(/;\s*\n/)
-      .map(s => s.trim())
-      .filter(s => s && !s.startsWith('--'));
+      .split(/;\s*(?:\r?\n|$)/)
+  .map(s => s.trim())
+  .filter(s => s.length > 0);
     for (const stmt of statements) {
       try {
         await pool.query(stmt);

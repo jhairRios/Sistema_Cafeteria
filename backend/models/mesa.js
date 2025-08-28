@@ -6,14 +6,40 @@ async function getAll() {
   return rows;
 }
 
-async function create({ codigo, numero, nombre, capacidad, ubicacion = 'interior', estado = 'disponible', detalle = null }) {
+async function create({ codigo, numero, nombre, capacidad = 4, ubicacion = 'interior', estado = 'disponible', detalle = null }) {
   const pool = getPool();
-  const [res] = await pool.query(
-    'INSERT INTO mesas (codigo, numero, nombre, capacidad, ubicacion, estado, detalle) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [codigo, numero, nombre, capacidad, ubicacion, estado, detalle ? JSON.stringify(detalle) : null]
-  );
-  const [rows] = await pool.query('SELECT * FROM mesas WHERE id=?', [res.insertId]);
-  return rows[0];
+  let attempts = 0;
+  while (attempts < 3) {
+    attempts++;
+    // Si no viene número, calcular siguiente (max(numero) + 1 de activos)
+    let num = Number(numero);
+    if (!num || !isFinite(num) || num < 1) {
+      const [maxRows] = await pool.query('SELECT COALESCE(MAX(numero),0) AS maxnum FROM mesas WHERE activo=1');
+      num = Number(maxRows[0]?.maxnum || 0) + 1;
+    }
+    const cod = codigo && String(codigo).trim() ? String(codigo).trim() : buildCodigo(num);
+    const nom = nombre && String(nombre).trim() ? String(nombre).trim() : `Mesa ${num}`;
+    const cap = Number(capacidad) || 4;
+    const ubi = ubicacion || 'interior';
+    const est = estado || 'disponible';
+    const det = detalle ? JSON.stringify(detalle) : null;
+    try {
+      const [res] = await pool.query(
+        'INSERT INTO mesas (codigo, numero, nombre, capacidad, ubicacion, estado, detalle) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [cod, num, nom, cap, ubi, est, det]
+      );
+      const [rows] = await pool.query('SELECT * FROM mesas WHERE id=?', [res.insertId]);
+      return rows[0];
+    } catch (e) {
+      // ER_DUP_ENTRY por concurrencia: recalcular y reintentar
+      if (e && e.code === 'ER_DUP_ENTRY') {
+        continue;
+      }
+      throw e;
+    }
+  }
+  // Si no se pudo tras reintentos
+  throw new Error('No se pudo crear la mesa por colisión de códigos repetidos');
 }
 
 async function getById(id) {

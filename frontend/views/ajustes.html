@@ -66,10 +66,26 @@
 
                 <div class="ajuste-grupo">
                     <h3>Permisos por Rol</h3>
-                    <div class="form-row">
+                    <div class="form-row" style="gap:12px; align-items:flex-end; flex-wrap:wrap;">
                         <div class="form-group">
                             <label for="rol-select-permisos">Rol</label>
                             <select id="rol-select-permisos" class="form-select"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="rol-select-copiar">Copiar de</label>
+                            <div style="display:flex; gap:8px;">
+                                <select id="rol-select-copiar" class="form-select"></select>
+                                <button class="btn btn-secondary" id="btn-copiar-permisos" title="Copiar permisos del rol seleccionado"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="min-width:220px; flex:1;">
+                            <label for="filtro-permiso">Filtrar permisos</label>
+                            <input id="filtro-permiso" class="form-input" placeholder="Buscar por nombre o clave...">
+                        </div>
+                        <div class="form-group" style="display:flex; gap:8px;">
+                            <button class="btn btn-outline" id="btn-perm-todo" title="Seleccionar todos"><i class="fas fa-check-square"></i></button>
+                            <button class="btn btn-outline" id="btn-perm-limpiar" title="Quitar selección"><i class="fas fa-square"></i></button>
+                            <span class="badge" id="perm-count" title="Seleccionados">0 seleccionados</span>
                         </div>
                     </div>
                     <div class="permisos-list" id="lista-permisos"></div>
@@ -90,8 +106,25 @@
                             <input id="dep-desc" class="form-input">
                         </div>
                         <div class="form-group">
+                            <label class="switch">
+                                <input type="checkbox" id="dep-activo" checked>
+                                <span class="slider"></span>
+                                <span class="switch-label">Activo</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
                             <button id="btn-dep-guardar" class="btn btn-primary">Guardar</button>
                             <input type="hidden" id="dep-id">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dep-filtro-activo">Mostrar</label>
+                            <select id="dep-filtro-activo" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="1">Activos</option>
+                                <option value="0">Inactivos</option>
+                            </select>
                         </div>
                     </div>
                     <div class="table-container">
@@ -114,8 +147,25 @@
                             <input id="tur-desc" class="form-input">
                         </div>
                         <div class="form-group">
+                            <label class="switch">
+                                <input type="checkbox" id="tur-activo" checked>
+                                <span class="slider"></span>
+                                <span class="switch-label">Activo</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
                             <button id="btn-tur-guardar" class="btn btn-primary">Guardar</button>
                             <input type="hidden" id="tur-id">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tur-filtro-activo">Mostrar</label>
+                            <select id="tur-filtro-activo" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="1">Activos</option>
+                                <option value="0">Inactivos</option>
+                            </select>
                         </div>
                     </div>
                     <div class="table-container">
@@ -138,8 +188,25 @@
                             <input id="car-desc" class="form-input">
                         </div>
                         <div class="form-group">
+                            <label class="switch">
+                                <input type="checkbox" id="car-activo" checked>
+                                <span class="slider"></span>
+                                <span class="switch-label">Activo</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
                             <button id="btn-car-guardar" class="btn btn-primary">Guardar</button>
                             <input type="hidden" id="car-id">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="car-filtro-activo">Mostrar</label>
+                            <select id="car-filtro-activo" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="1">Activos</option>
+                                <option value="0">Inactivos</option>
+                            </select>
                         </div>
                     </div>
                     <div class="table-container">
@@ -320,6 +387,12 @@
                             <input type="number" id="mesas-8personas" class="form-input" value="0" min="0">
                         </div>
                     </div>
+                                        <div class="form-actions">
+                                                <button class="btn btn-primary" id="btn-aplicar-disposicion"><i class="fas fa-sync"></i> Aplicar a Mesas</button>
+                                                <label class="checkbox" style="margin-left:8px;">
+                                                    <input type="checkbox" id="mesas-reset"> Reiniciar (desactivar existentes)
+                                                </label>
+                                        </div>
                 </div>
 
                 <div class="ajuste-grupo">
@@ -478,10 +551,10 @@
                     </div>
                     
                     <div class="backup-actions">
-                        <button class="btn btn-primary">
+                        <button class="btn btn-primary" id="btn-crear-backup">
                             <i class="fas fa-download"></i> Crear Backup Ahora
                         </button>
-                        <button class="btn btn-outline">
+                        <button class="btn btn-outline" id="btn-programar-backup">
                             <i class="fas fa-history"></i> Programar Backup Automático
                         </button>
                     </div>
@@ -504,10 +577,10 @@
                     </div>
                     
                     <div class="restore-actions">
-                        <button class="btn btn-warning">
+                        <button class="btn btn-warning" id="btn-restaurar-backup">
                             <i class="fas fa-upload"></i> Restaurar Backup
                         </button>
-                        <button class="btn btn-danger">
+                        <button class="btn btn-danger" id="btn-restaurar-defaults">
                             <i class="fas fa-trash"></i> Restaurar Valores por Defecto
                         </button>
                     </div>
@@ -521,7 +594,7 @@
                 <div class="ajuste-grupo">
                     <h3>Historial de Backups</h3>
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="data-table" id="tabla-backups">
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
@@ -531,41 +604,7 @@
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>15/12/2023 02:00</td>
-                                    <td>45.2 MB</td>
-                                    <td>Automático</td>
-                                    <td><span class="badge badge-success">Completado</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>14/12/2023 02:00</td>
-                                    <td>44.8 MB</td>
-                                    <td>Automático</td>
-                                    <td><span class="badge badge-success">Completado</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>13/12/2023 02:00</td>
-                                    <td>44.5 MB</td>
-                                    <td>Automático</td>
-                                    <td><span class="badge badge-success">Completado</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>

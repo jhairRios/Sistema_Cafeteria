@@ -3,6 +3,12 @@ import { api } from '../core/api.js';
 
 export function initVentasRapidas() {
     console.log('Inicializando vista Venta Rápida');
+    let permisos = [];
+    try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
+    const canAgregar = permisos.includes('action.ventas.agregar');
+    const canLimpiar = permisos.includes('action.ventas.limpiar');
+    const canCancelar = permisos.includes('action.ventas.cancelar');
+    const canProcesar = permisos.includes('action.ventas.procesar');
 
     let carrito = [];
     let total = 0;
@@ -62,6 +68,10 @@ export function initVentasRapidas() {
                     <button class="btn-agregar-producto"><i class="fas fa-plus"></i> Agregar</button>
                 </div>`).join('');
             bindAgregarHandlers();
+            // Ocultar botón Agregar si no tiene permiso
+            if (!canAgregar) {
+                grid.querySelectorAll('.btn-agregar-producto').forEach(b => b.style.display = 'none');
+            }
         } catch (e) {
             console.error(e);
             grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:#dc3545">No se pudieron cargar los productos.</div>';
@@ -69,9 +79,10 @@ export function initVentasRapidas() {
     }
 
     function bindAgregarHandlers() {
-        const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
+    const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
         botonesAgregar.forEach(btn => {
             btn.addEventListener('click', (e) => {
+        if (!canAgregar) return;
                 const productoCard = e.target.closest('.producto-card');
                 if (!productoCard) return;
                 const productoId = String(productoCard.dataset.id);
@@ -189,15 +200,20 @@ export function initVentasRapidas() {
         actualizarCarrito();
     }
 
-    btnLimpiar?.addEventListener('click', () => { carrito = []; actualizarCarrito(); });
+    if (btnLimpiar) btnLimpiar.style.display = canLimpiar ? '' : 'none';
+    btnLimpiar?.addEventListener('click', () => { if (!canLimpiar) return; carrito = []; actualizarCarrito(); });
 
+    if (btnCancelar) btnCancelar.style.display = canCancelar ? '' : 'none';
     btnCancelar?.addEventListener('click', () => {
+        if (!canCancelar) return;
         if (confirm('¿Estás seguro de que quieres cancelar la venta?')) {
             carrito = []; actualizarCarrito();
         }
     });
 
+    if (btnProcesar) btnProcesar.style.display = canProcesar ? '' : 'none';
     btnProcesar?.addEventListener('click', () => {
+        if (!canProcesar) return;
         if (carrito.length === 0) return alert('El carrito está vacío');
         const metodoPago = document.getElementById('metodo-pago').value;
         if (metodoPago === 'efectivo') {

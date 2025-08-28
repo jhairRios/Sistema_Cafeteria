@@ -1800,6 +1800,15 @@ function initAjustesView() {
         });
     });
 
+    // Backup: elementos
+    const btnCrearBackup = document.getElementById('btn-crear-backup');
+    const btnProgramarBackup = document.getElementById('btn-programar-backup');
+    const selFrecuencia = document.getElementById('frecuencia-backup');
+    const inputArchivoBackup = document.getElementById('archivo-backup');
+    const btnRestaurarBackup = document.getElementById('btn-restaurar-backup');
+    const btnRestaurarDefaults = document.getElementById('btn-restaurar-defaults');
+    const tablaBackups = document.getElementById('tabla-backups')?.querySelector('tbody');
+
     // Guardar ajustes (abre confirmación)
     if (btnGuardar) {
         btnGuardar.addEventListener('click', () => {
@@ -1942,6 +1951,119 @@ function initAjustesView() {
             }
         })();
     }
+
+    // ====== BACKUP: acciones ======
+    async function cargarBackups() {
+        try {
+            const r = await fetch('/api/backup');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const items = await r.json();
+            if (tablaBackups) {
+                tablaBackups.innerHTML = (items || []).map(it => {
+                    const fecha = new Date(it.mtime).toLocaleString();
+                    const tam = (Number(it.size) / (1024*1024)).toFixed(2) + ' MB';
+                    return `<tr>
+                        <td>${fecha}</td>
+                        <td>${tam}</td>
+                        <td>JSON</td>
+                        <td>OK</td>
+                        <td>
+                            <button class="btn btn-outline" data-dl="${it.file}">Descargar</button>
+                            <button class="btn btn-danger" data-rs="${it.file}">Restaurar</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+                // Bind acciones por fila
+                tablaBackups.querySelectorAll('button[data-dl]').forEach(b => {
+                    b.addEventListener('click', () => {
+                        const f = b.getAttribute('data-dl');
+                        window.open(`/api/backup/download/${encodeURIComponent(f)}`,'_blank');
+                    });
+                });
+                tablaBackups.querySelectorAll('button[data-rs]').forEach(b => {
+                    b.addEventListener('click', async () => {
+                        const f = b.getAttribute('data-rs');
+                        if (!confirm('Esto sobrescribirá los datos actuales. ¿Continuar?')) return;
+                        try {
+                            const rr = await fetch('/api/backup/restore', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: f }) });
+                            if (!rr.ok) throw new Error('HTTP ' + rr.status);
+                            alert('Restaurado correctamente');
+                        } catch (e) {
+                            alert('Error al restaurar: ' + e.message);
+                        }
+                    });
+                });
+            }
+        } catch (e) {
+            if (tablaBackups) tablaBackups.innerHTML = `<tr><td colspan="5">No se pudo cargar el historial</td></tr>`;
+        }
+    }
+
+    if (btnCrearBackup) {
+        btnCrearBackup.addEventListener('click', async () => {
+            try {
+                const r = await fetch('/api/backup/create', { method: 'POST' });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const j = await r.json();
+                alert('Backup creado: ' + j.file);
+                cargarBackups();
+            } catch (e) {
+                alert('No se pudo crear el backup: ' + e.message);
+            }
+        });
+    }
+
+    if (btnProgramarBackup && selFrecuencia) {
+        btnProgramarBackup.addEventListener('click', async () => {
+            try {
+                const freq = selFrecuencia.value;
+                const r = await fetch('/api/backup/schedule', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frequency: freq }) });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                alert('Backup automático programado (' + freq + ')');
+            } catch (e) {
+                alert('No se pudo programar: ' + e.message);
+            }
+        });
+    }
+
+    if (btnRestaurarBackup && inputArchivoBackup) {
+        btnRestaurarBackup.addEventListener('click', async () => {
+            try {
+                const f = inputArchivoBackup.files?.[0];
+                if (!f) return alert('Selecciona un archivo primero');
+                const fd = new FormData();
+                fd.append('file', f);
+                const up = await fetch('/api/backup/upload', { method: 'POST', body: fd });
+                if (!up.ok) throw new Error('HTTP ' + up.status);
+                const uj = await up.json();
+                const name = uj.file;
+                if (!name) throw new Error('Subida sin nombre de archivo');
+                if (!confirm('Se restaurará el backup subido. ¿Continuar?')) return;
+                const rr = await fetch('/api/backup/restore', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: name }) });
+                if (!rr.ok) throw new Error('HTTP ' + rr.status);
+                alert('Backup restaurado correctamente');
+            } catch (e) {
+                alert('Error en restauración: ' + e.message);
+            }
+        });
+    }
+
+    if (btnRestaurarDefaults) {
+        btnRestaurarDefaults.addEventListener('click', async () => {
+            if (!confirm('Esto reinstalará los valores por defecto. ¿Continuar?')) return;
+            try {
+                const r = await fetch('/api/backup/restore-defaults', { method: 'POST' });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                alert('Valores por defecto restaurados');
+                cargarBackups();
+            } catch (e) {
+                alert('No se pudo restaurar por defecto: ' + e.message);
+            }
+        });
+    }
+
+    // cargar historial al entrar en Ajustes
+    cargarBackups();
 
     // Color picker interactivo
     const colorPicker = document.getElementById('color-principal');

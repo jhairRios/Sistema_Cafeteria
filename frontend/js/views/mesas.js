@@ -3,6 +3,12 @@ import { Mesas as MesasAPI } from '../core/api.js';
 
 export function initMesas() {
     console.log('Inicializando vista Mesas');
+    // Cache local para calcular siguiente número de mesa
+    let mesasCache = [];
+    let permisos = [];
+    try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
+    const canOcupar = permisos.includes('action.mesas.ocupar');
+    const canCerrar = permisos.includes('action.mesas.cerrar');
 
     const btnAgregarMesa = document.getElementById('btn-agregar-mesa');
     const modalMesa = document.getElementById('modal-mesa');
@@ -25,10 +31,22 @@ export function initMesas() {
     // Reservadas eliminadas
     }
 
+    function buildCodigo(n) { return `MESA-${String(n).padStart(3, '0')}`; }
+
     btnAgregarMesa?.addEventListener('click', () => {
         const t = document.getElementById('modal-titulo-mesa'); if (t) t.textContent = 'Agregar Mesa';
         const id = document.getElementById('mesa-id'); if (id) id.value = '';
         formMesa?.reset();
+        // Autocompletar siguiente número
+        const nextNum = (() => {
+            if (!Array.isArray(mesasCache) || mesasCache.length === 0) return 1;
+            const maxNum = Math.max(...mesasCache.map(m => Number(m.numero) || 0));
+            return (isFinite(maxNum) ? maxNum : 0) + 1;
+        })();
+        const numInput = document.getElementById('mesa-numero'); if (numInput) numInput.value = String(nextNum);
+        const capSel = document.getElementById('mesa-capacidad'); if (capSel && !capSel.value) capSel.value = '4';
+        const ubiSel = document.getElementById('mesa-ubicacion'); if (ubiSel && !ubiSel.value) ubiSel.value = 'interior';
+        const estSel = document.getElementById('mesa-estado'); if (estSel && !estSel.value) estSel.value = 'disponible';
         modalMesa && (modalMesa.style.display = 'block');
     });
 
@@ -50,10 +68,35 @@ export function initMesas() {
     // reservar eliminado
     });
 
-    formMesa?.addEventListener('submit', (e) => {
+    formMesa?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        alert('Mesa guardada correctamente');
-        modalMesa && (modalMesa.style.display = 'none');
+        const numero = Number(document.getElementById('mesa-numero')?.value || 0);
+        const capacidad = Number(document.getElementById('mesa-capacidad')?.value || 4);
+        const ubicacion = document.getElementById('mesa-ubicacion')?.value || 'interior';
+        const estado = document.getElementById('mesa-estado')?.value || 'disponible';
+        if (!numero || numero < 1) { alert('Número de mesa inválido'); return; }
+        try {
+            const payload = {
+                codigo: buildCodigo(numero),
+                numero,
+                nombre: `Mesa ${numero}`,
+                capacidad,
+                ubicacion,
+                estado,
+                detalle: null,
+            };
+            const creada = await MesasAPI.create(payload);
+            // Actualizar cache y UI
+            if (creada) {
+                if (Array.isArray(mesasCache)) mesasCache.push(creada);
+                modalMesa && (modalMesa.style.display = 'none');
+                await cargarMesas();
+                alert(`Mesa ${creada.numero} creada`);
+            }
+        } catch (err) {
+            console.error('Error creando mesa', err);
+            alert(`No se pudo crear la mesa: ${err?.message || 'Error desconocido'}`);
+        }
     });
 
     // Usar localStorage para que Home y Mesas compartan el mismo estado y se sincronicen
@@ -83,13 +126,13 @@ export function initMesas() {
             <div class="mesa-acciones"></div>
         `;
         const acc = div.querySelector('.mesa-acciones');
-        if (estadoClass === 'disponible') {
+    if (estadoClass === 'disponible') {
             acc.innerHTML = `
-                <button class="btn btn-sm btn-success btn-ocupar" data-id="${m.id}"><i class="fas fa-play"></i> Ocupar</button>`;
+        ${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${m.id}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}`;
         } else if (estadoClass === 'ocupada') {
             acc.innerHTML = `
-                <button class="btn btn-sm btn-info btn-ver" data-id="${m.id}"><i class="fas fa-eye"></i> Ver</button>
-                <button class="btn btn-sm btn-primary btn-cerrar" data-id="${m.id}"><i class="fas fa-check"></i> Cerrar</button>`;
+        <button class="btn btn-sm btn-info btn-ver" data-id="${m.id}"><i class="fas fa-eye"></i> Ver</button>
+        ${canCerrar ? `<button class=\"btn btn-sm btn-primary btn-cerrar\" data-id=\"${m.id}\"><i class=\"fas fa-check\"></i> Cerrar</button>` : ''}`;
         }
         return div;
     }
@@ -113,6 +156,7 @@ export function initMesas() {
             grid.innerHTML = '<div class="empty">Sin datos de mesas. ¿El backend está actualizado?</div>';
             return;
         }
+        mesasCache = mesas.slice();
         mesas.forEach(m => grid.appendChild(renderMesaCard(m)));
         wireEventosMesas();
         actualizarEstadisticas();
@@ -134,7 +178,7 @@ export function initMesas() {
             estadoElement.innerHTML = '<i class="fas fa-check-circle"></i> Disponible';
             mesa.querySelector('.mesa-info')?.remove();
             mesa.querySelector('.mesa-acciones').innerHTML = `
-    <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}"><i class="fas fa-play"></i> Ocupar</button>`;
+    ${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${mesaId}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}`;
         } else if (nuevoEstado === 'ocupada') {
             estadoElement.classList.add('estado-ocupada');
             estadoElement.innerHTML = '<i class="fas fa-users"></i> Ocupada';
@@ -148,7 +192,7 @@ export function initMesas() {
             }
             mesa.querySelector('.mesa-acciones').innerHTML = `
         <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}"><i class="fas fa-eye"></i> Ver</button>
-        <button class="btn btn-sm btn-primary btn-cerrar" data-id="${mesaId}"><i class="fas fa-check"></i> Cerrar</button>`;
+        ${canCerrar ? `<button class=\"btn btn-sm btn-primary btn-cerrar\" data-id=\"${mesaId}\"><i class=\"fas fa-check\"></i> Cerrar</button>` : ''}`;
             if (options.navigateOnOcupar) {
                 window.appState = window.appState || {}; window.appState.currentMesa = { id: mesaId, cliente: datos.cliente || 'Cliente', personas: datos.personas || null };
                 window.__app?.loadView && window.__app.loadView('ventas-rapidas');
@@ -157,12 +201,14 @@ export function initMesas() {
 
         setTimeout(() => {
             mesa.querySelector('.btn-ocupar')?.addEventListener('click', () => {
+                if (!canOcupar) return;
                 document.getElementById('mesa-ocupar-id').value = mesaId;
                 formOcupar?.reset();
                 modalOcupar && (modalOcupar.style.display = 'block');
             });
             // reservar eliminado
             mesa.querySelector('.btn-cerrar')?.addEventListener('click', () => {
+                if (!canCerrar) return;
                 if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) cambiarEstadoMesa(mesaId, 'disponible');
             });
             mesa.querySelector('.btn-ver')?.addEventListener('click', () => { /* ver detalles */ });
@@ -179,11 +225,12 @@ export function initMesas() {
     }
 
     function wireEventosMesas() {
-        document.querySelectorAll('.btn-ocupar').forEach(btn => {
+    document.querySelectorAll('.btn-ocupar').forEach(btn => {
             btn.addEventListener('click', () => {
                 const mesaId = btn.dataset.id;
                 const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
-        if (mesa.dataset.estado === 'disponible') {
+    if (mesa.dataset.estado === 'disponible') {
+            if (!canOcupar) return;
                     document.getElementById('mesa-ocupar-id').value = mesaId;
                     formOcupar?.reset();
                     modalOcupar && (modalOcupar.style.display = 'block');
@@ -191,9 +238,10 @@ export function initMesas() {
             });
         });
     // reservar eliminado
-        document.querySelectorAll('.btn-cerrar').forEach(btn => {
+    document.querySelectorAll('.btn-cerrar').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const mesaId = btn.dataset.id;
+        if (!canCerrar) return;
                 if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) {
                     await MesasAPI.setEstado(mesaId, 'disponible', {});
                     saveMesaState(mesaId, 'disponible', {});

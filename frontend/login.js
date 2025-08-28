@@ -35,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
           // Usar sessionStorage para que se pierda al cerrar el navegador
           sessionStorage.setItem('logueado', '1');
           sessionStorage.setItem('nombreUsuario', data.user?.nombre || 'Usuario');
+          // Guardar rol actual para poder refrescar permisos si cambian en Ajustes
+          try {
+            if (data.user?.rol?.id) sessionStorage.setItem('rolId', String(data.user.rol.id));
+            if (data.user?.rol?.nombre) sessionStorage.setItem('rolNombre', String(data.user.rol.nombre));
+          } catch (_) {}
           try { sessionStorage.setItem('permisos', JSON.stringify(data.permisos || [])); } catch(_) {}
           showToast({
             title: 'Bienvenido',

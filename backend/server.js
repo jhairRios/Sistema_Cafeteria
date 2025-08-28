@@ -4,6 +4,8 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const { initPool } = require('./db');
+const cron = require('node-cron');
+const fs = require('fs');
 
 // Middleware para parsear JSON
 app.use(express.json());
@@ -23,6 +25,8 @@ const catalogosRoutes = require('./routes/catalogos');
 const permisosRoutes = require('./routes/permisos');
 const mesasRoutes = require('./routes/mesas');
 const reservasRoutes = require('./routes/reservas');
+const restauranteRoutes = require('./routes/restaurante');
+const backupRoutes = require('./routes/backup');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/clientes', clienteRoutes);
@@ -36,6 +40,8 @@ app.use('/api/catalogos', catalogosRoutes);
 app.use('/api/permisos', permisosRoutes);
 // Endpoint de reservas eliminado: responder 410 Gone explícitamente
 app.use('/api/reservas', reservasRoutes);
+app.use('/api/restaurante', restauranteRoutes);
+app.use('/api/backup', backupRoutes);
 
 // 404 JSON para cualquier otra ruta /api no existente
 app.use('/api', (req, res) => {
@@ -72,4 +78,33 @@ initPool().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
+    // Iniciar cron de backups (simple)
+    try {
+        const schedulePath = path.join(__dirname, 'backups', 'schedule.json');
+        const loadExpr = () => {
+            try {
+                const cfg = JSON.parse(fs.readFileSync(schedulePath,'utf8'));
+                // Mapear frecuencia a cron
+                const f = (cfg.frequency || 'semanal');
+                if (f === 'diario') return '0 2 * * *'; // diario 02:00
+                if (f === 'mensual') return '0 3 1 * *'; // mensual día 1 a las 03:00
+                return '0 2 * * 1'; // semanal lunes 02:00
+            } catch { return '0 2 * * 1'; }
+        };
+        let expr = loadExpr();
+        cron.schedule(expr, async () => {
+            try {
+                const { createNow } = require('./controllers/backupController');
+                // Llamar a createNow con objetos falsos (simulación simple)
+                await new Promise((resolve, reject) => {
+                    const req = {};
+                    const res = { json: () => resolve(), status: () => ({ json: reject }) };
+                    createNow(req, res).catch(reject);
+                });
+                console.log('[backup] Backup automático ejecutado');
+            } catch (e) {
+                console.warn('[backup] Error en backup automático:', e?.message);
+            }
+        });
+    } catch (_) {}
 });

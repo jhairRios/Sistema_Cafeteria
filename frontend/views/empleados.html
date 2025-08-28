@@ -101,10 +101,13 @@
                         <label for="empleado-usuario">Usuario</label>
                         <input type="text" id="empleado-usuario" class="form-input" placeholder="">
                     </div>
-                    <div class="form-group">
-                        <label for="empleado-contrasena">Contraseña</label>
-                        <input type="password" id="empleado-contrasena" class="form-input" placeholder="Por defecto: 1234">
-                    </div>
+                                        <div class="form-group">
+                                                <label for="empleado-contrasena">Contraseña</label>
+                                                <div class="input-with-icon">
+                                                    <input type="password" id="empleado-contrasena" class="form-input" placeholder="Por defecto: 1234">
+                                                    <button type="button" id="toggle-empleado-contrasena" class="icon-btn" title="Mostrar/Ocultar"><i class="fas fa-eye"></i></button>
+                                                </div>
+                                        </div>
                     <div class="form-group">
                         <label for="empleado-telefono">Teléfono</label>
                         <input type="tel" id="empleado-telefono" class="form-input" required>
@@ -113,21 +116,27 @@
 
                 <!-- Fila 3: Departamento, Turno, Posición -->
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="empleado-departamento">Departamento</label>
-                        <input id="empleado-departamento" class="form-input" list="lista-departamentos" placeholder="Escribe o elige" required>
-                        <datalist id="lista-departamentos"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="empleado-turno">Turno</label>
-                        <input id="empleado-turno" class="form-input" list="lista-turnos" placeholder="Escribe o elige" required>
-                        <datalist id="lista-turnos"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="empleado-posicion">Posición/Cargo</label>
-                        <input type="text" id="empleado-posicion" class="form-input" list="lista-cargos" required>
-                        <datalist id="lista-cargos"></datalist>
-                    </div>
+                                        <div class="form-group">
+                                                <label for="empleado-departamento">Departamento</label>
+                                                <select id="empleado-departamento" class="form-select" required>
+                                                    <option value="">Selecciona un departamento</option>
+                                                </select>
+                                                <datalist id="lista-departamentos" style="display:none"></datalist>
+                                        </div>
+                                        <div class="form-group">
+                                                <label for="empleado-turno">Turno</label>
+                                                <select id="empleado-turno" class="form-select" required>
+                                                    <option value="">Selecciona un turno</option>
+                                                </select>
+                                                <datalist id="lista-turnos" style="display:none"></datalist>
+                                        </div>
+                                        <div class="form-group">
+                                                <label for="empleado-posicion">Posición/Cargo</label>
+                                                <select id="empleado-posicion" class="form-select" required>
+                                                    <option value="">Selecciona un cargo</option>
+                                                </select>
+                                                <datalist id="lista-cargos" style="display:none"></datalist>
+                                        </div>
                 </div>
 
                 <!-- Fila 4: Salario, Estado -->

@@ -4,6 +4,11 @@ import { api } from '../core/api.js';
 
 export function initProductos() {
   console.log('Vista Productos inicializada');
+  let permisos = [];
+  try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
+  const canAdd = permisos.includes('action.productos.add') || permisos.includes('action.productos.crud');
+  const canEdit = permisos.includes('action.productos.edit') || permisos.includes('action.productos.crud');
+  const canDelete = permisos.includes('action.productos.delete') || permisos.includes('action.productos.crud');
   // Elementos UI
   const addBtn = document.getElementById('btn-agregar-producto');
   const modal = document.getElementById('modal-producto');
@@ -69,8 +74,8 @@ export function initProductos() {
             <td>${p.stock_minimo ?? 0}</td>
           <td><span class="badge ${est.cls}">${est.label}</span></td>
           <td class="acciones">
-            <button class="btn btn-sm btn-warning" data-action="edit" data-id="${p.id}"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-danger" data-action="delete" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+            ${canEdit ? `<button class="btn btn-sm btn-warning" data-action="edit" data-id="${p.id}"><i class="fas fa-edit"></i></button>` : ''}
+            ${canDelete ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${p.id}"><i class="fas fa-trash"></i></button>` : ''}
           </td>
         </tr>`;
     }).join('');
@@ -87,6 +92,7 @@ export function initProductos() {
     const item = productos.find(x => String(x.id) === String(id));
     if (!item) return;
     if (action === 'edit') {
+      if (!canEdit) return;
       editingId = item.id;
       // Prellenar formulario
       setValue('#producto-id', item.id);
@@ -99,6 +105,7 @@ export function initProductos() {
       if (modalTitle) modalTitle.textContent = 'Editar Producto';
       openModal();
     } else if (action === 'delete') {
+      if (!canDelete) return;
       if (!confirm('¿Eliminar este producto?')) return;
       await apiDelete(id);
       await load();
@@ -109,6 +116,7 @@ export function initProductos() {
 
   // Modal open/close
   addBtn?.addEventListener('click', () => {
+    if (!canAdd) return;
     editingId = null;
     resetForm();
     setValue('#producto-id', '');
@@ -126,8 +134,10 @@ export function initProductos() {
     const data = getFormData();
     try {
       if (editingId) {
+        if (!canEdit) { alert('No tienes permiso para editar productos'); return; }
         await apiPut(editingId, data);
       } else {
+        if (!canAdd) { alert('No tienes permiso para agregar productos'); return; }
         await apiPost(data);
       }
       closeModal();
