@@ -1,8 +1,34 @@
 // js/views/home.js
 import { api, Mesas as MesasAPI } from '../core/api.js';
+import { getSocket } from '../core/sockets.js';
 
 export function initHome() {
   console.log('Vista Home inicializada');
+  // Mostrar usuario actual en tarjeta
+  try { const name = sessionStorage.getItem('nombreUsuario') || 'Usuario'; const el = document.getElementById('current-user'); if (el) el.textContent = name; } catch {}
+  // Cargar usuarios online al iniciar
+  (async () => {
+    try {
+      const res = await fetch('/api/users/online');
+    let list = await res.json();
+    list = ensureMeInOnlineList(list);
+      const countEl = document.getElementById('online-users-count');
+  // Si aún viene vacío, contar al usuario actual como mínimo 1
+  const meName = sessionStorage.getItem('nombreUsuario') || '';
+  const safeCount = Array.isArray(list) ? (list.length || (meName ? 1 : 0)) : (meName ? 1 : 0);
+  if (countEl) countEl.textContent = String(safeCount);
+      // opcional: title con nombres
+  if (countEl && Array.isArray(list)) countEl.title = list.map(u => u.nombre).join(', ');
+  renderOnlineUsers(list);
+    } catch {
+      // Fallback: mostrar al usuario actual
+      const fallback = ensureMeInOnlineList([]);
+      const countEl = document.getElementById('online-users-count');
+      if (countEl) countEl.textContent = String(fallback.length);
+      if (countEl) countEl.title = fallback.map(u => u.nombre).join(', ');
+      renderOnlineUsers(fallback);
+    }
+  })();
   loadLowStock();
   const refresh = () => loadMesasDashboard();
   try { window.addEventListener('mesasStateChanged', refresh); } catch {}
@@ -13,7 +39,101 @@ export function initHome() {
     });
   } catch {}
   loadMesasDashboard();
+
+  // Suscripciones de sockets para reflejar bloqueos en el dashboard
+  try {
+    const sock = getSocket && getSocket();
+    if (sock) {
+      // Escuchar cambios de usuarios en línea
+      sock.on('users:online', (list) => {
+        try {
+          const countEl = document.getElementById('online-users-count');
+          const withMe = ensureMeInOnlineList(list);
+          const meName = sessionStorage.getItem('nombreUsuario') || '';
+          const safeCount = Array.isArray(withMe) ? (withMe.length || (meName ? 1 : 0)) : (meName ? 1 : 0);
+          if (countEl) countEl.textContent = String(safeCount);
+          if (countEl && Array.isArray(withMe)) countEl.title = withMe.map(u => u.nombre).join(', ');
+          renderOnlineUsers(withMe);
+        } catch {}
+      });
+      sock.on('mesas:locked', ({ mesaId }) => {
+        const card = document.querySelector(`#home-grid-mesas .mesa-card[data-id="${mesaId}"]`);
+        if (card && card.dataset.estado === 'disponible') {
+          card.classList.add('bloqueada');
+          card.querySelector('.btn-ocupar-mesa')?.setAttribute('disabled', 'disabled');
+        }
+      });
+      sock.on('mesas:unlocked', ({ mesaId }) => {
+        const card = document.querySelector(`#home-grid-mesas .mesa-card[data-id="${mesaId}"]`);
+        if (card) {
+          card.classList.remove('bloqueada');
+          card.querySelector('.btn-ocupar-mesa')?.removeAttribute('disabled');
+        }
+      });
+      sock.on('mesas:changed', () => {
+        // Refrescar conteos y tarjetas
+        loadMesasDashboard();
+      });
+    }
+  } catch {}
 }
+
+function renderOnlineUsers(list) {
+  try {
+    const tbody = document.getElementById('online-users-tbody');
+    if (!tbody) return;
+    const arr = ensureMeInOnlineList(list);
+    if (!arr.length) {
+      tbody.innerHTML = '<tr><td colspan="2">No hay usuarios en línea.</td></tr>';
+      return;
+    }
+    const meId = (sessionStorage.getItem('userId') || '').toString();
+    tbody.innerHTML = arr.map(u => {
+      const name = u.nombre || ('Usuario ' + (u.id ?? ''));
+      const role = u.rol || '';
+      const isMe = meId && (String(u.id ?? '') === meId);
+      const nameCell = `${escapeHtml(name)}${isMe ? ' <span class="me-label">(tú)</span>' : ''}`;
+      return `<tr class="${isMe ? 'me' : ''}"><td>${nameCell}</td><td>${escapeHtml(role)}</td></tr>`;
+    }).join('');
+  } catch {}
+}
+
+// Garantiza que el usuario actual aparezca en la lista, evitando duplicados por id
+function ensureMeInOnlineList(list) {
+  const arr = Array.isArray(list) ? list.slice() : [];
+  try {
+    const logged = sessionStorage.getItem('logueado') === '1';
+    const id = sessionStorage.getItem('userId');
+    const nombre = sessionStorage.getItem('nombreUsuario') || '';
+    const rol = sessionStorage.getItem('rolNombre') || sessionStorage.getItem('roleName') || '';
+    if (logged && id) {
+      const exists = arr.some(u => String(u.id) === String(id));
+      if (!exists) arr.push({ id: String(id), nombre: nombre || `Usuario ${id}`, rol });
+    }
+  } catch {}
+  // Devolver lista única por id
+  try {
+    const seen = new Set();
+    return arr.filter(u => {
+      const key = String(u.id ?? u.nombre ?? Math.random());
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  } catch { return arr; }
+}
+
+// Abrir modal al hacer click en la tarjeta de usuarios conectados
+try {
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest && e.target.closest('#online-users-card');
+    const modal = document.getElementById('modal-online-users');
+    const closeBtn = document.getElementById('close-online-users');
+    if (card && modal) modal.style.display = 'block';
+    if (e.target === modal) modal.style.display = 'none';
+    if (closeBtn && e.target === closeBtn) modal.style.display = 'none';
+  });
+} catch {}
 
 async function loadLowStock() {
   const countEl = document.getElementById('low-stock-count');
@@ -91,12 +211,13 @@ async function loadMesasDashboard() {
     elDisp.textContent = String(disponibles);
     elOc.textContent = String(ocupadas);
   // elRes removido
-    grid.innerHTML = arr.map(m => {
+    grid.innerHTML = arr.map((m, idx) => {
       const estadoClase = m.estado === 'ocupada' ? 'mesa-ocupada' : 'mesa-disponible';
       const estadoBadge = m.estado === 'ocupada'
         ? '<div class="mesa-estado estado-ocupada">Ocupada</div>'
         : '<div class="mesa-estado estado-disponible">Disponible</div>';
-    const acciones = m.estado === 'ocupada'
+      const numeroVisual = idx + 1;
+      const acciones = m.estado === 'ocupada'
           ? `<div class="mesa-actions">
                <button class="btn btn-sm btn-info btn-ver-mesa" data-id="${m.id}"><i class="fas fa-eye"></i> Ver</button>
          ${canCerrar ? `<button class=\"btn btn-sm btn-primary btn-cerrar-mesa\" data-id=\"${m.id}\"><i class=\"fas fa-check\"></i> Cerrar</button>` : ''}
@@ -104,7 +225,7 @@ async function loadMesasDashboard() {
         : `<div class="mesa-actions">${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar-mesa\" data-id=\"${m.id}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}</div>`;
       return `
         <div class="mesa-card ${estadoClase}" data-id="${m.id}" data-estado="${m.estado}" data-capacidad="${m.capacidad}">
-          <div class="mesa-numero">Mesa ${m.numero}</div>
+          <div class="mesa-numero">Mesa ${numeroVisual}</div>
           ${estadoBadge}
           ${acciones}
         </div>`;
@@ -188,8 +309,25 @@ async function loadMesasDashboard() {
         }
       } else if (btnOcupar) {
         if (!canOcupar) return;
-        // Abrir modal para capturar datos en lugar de prompts
-        abrirModalOcupar(mesaId);
+        // Emitir lock por sockets antes de abrir el modal
+        try {
+          const sock = getSocket && getSocket();
+          if (sock) {
+            sock.emit('mesas:lock', { mesaId }, (resp) => {
+              if (!resp?.ok) return alert(resp?.error || 'No se pudo bloquear la mesa');
+              const card = document.querySelector(`#home-grid-mesas .mesa-card[data-id="${mesaId}"]`);
+              if (card) {
+                card.classList.add('bloqueada');
+                card.querySelector('.btn-ocupar-mesa')?.setAttribute('disabled','disabled');
+              }
+              abrirModalOcupar(mesaId);
+            });
+          } else {
+            abrirModalOcupar(mesaId);
+          }
+        } catch {
+          abrirModalOcupar(mesaId);
+        }
       } else if (btnVer) {
         try {
           const numeroTxt = card.querySelector('.mesa-numero')?.textContent?.trim() || `Mesa ${mesaId}`;

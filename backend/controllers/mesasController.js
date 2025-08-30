@@ -14,7 +14,11 @@ exports.create = async (req, res) => {
     const mesa = await Mesas.create(req.body || {});
     res.status(201).json(mesa);
   } catch (e) {
-    console.error(e); res.status(500).json({ message: 'Error al crear mesa' });
+  // Log completo del error para depuración
+  console.error('Error creando mesa:', e);
+  // Mostrar mensaje real de error si existe
+  const msg = e?.sqlMessage || e?.message || 'Error al crear mesa';
+  res.status(500).json({ message: msg });
   }
 };
 
@@ -30,7 +34,9 @@ exports.update = async (req, res) => {
 exports.remove = async (req, res) => {
   try {
     await Mesas.remove(req.params.id);
-    res.json({ message: 'Mesa eliminada' });
+  // Emitir cambio global de mesas para refrescar clientes
+  try { req.app?.locals?.io?.emit('mesas:changed', { mesaId: String(req.params.id), estado: 'eliminada' }); } catch {}
+  res.json({ message: 'Mesa eliminada' });
   } catch (e) {
     console.error(e); res.status(500).json({ message: 'Error al eliminar mesa' });
   }
@@ -41,7 +47,18 @@ exports.setEstado = async (req, res) => {
     const { estado, detalle } = req.body || {};
     if (!estado) return res.status(400).json({ message: 'estado requerido' });
     const mesa = await Mesas.setEstado(req.params.id, estado, detalle || null);
-    res.json(mesa);
+  try { req.app?.locals?.io?.emit('mesas:changed', { mesaId: String(req.params.id), estado: mesa.estado, detalle: mesa.detalle }); } catch {}
+    // Si pasa a disponible, liberar lock si existía
+    try {
+      if (String(estado) === 'disponible') {
+        const locks = req.app?.locals?.mesaLocks; const io = req.app?.locals?.io;
+        if (locks && locks.has(String(req.params.id))) {
+          locks.delete(String(req.params.id));
+          io && io.emit('mesas:unlocked', { mesaId: String(req.params.id) });
+        }
+      }
+    } catch {}
+  res.json(mesa);
   } catch (e) {
     console.error(e); res.status(500).json({ message: 'Error al cambiar estado' });
   }

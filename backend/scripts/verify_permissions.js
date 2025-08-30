@@ -4,7 +4,7 @@ const { initPool, getPool } = require('../db');
 const granularPerms = [
 	'action.empleados.add','action.empleados.edit','action.empleados.delete',
 	'action.productos.add','action.productos.edit','action.productos.delete',
-	'action.mesas.ocupar','action.mesas.cerrar',
+	'action.mesas.ocupar','action.mesas.cerrar','action.mesas.delete',
 	'action.reportes.generar','action.reportes.export.pdf','action.reportes.export.excel','action.reportes.filtros',
 	'action.ventas.agregar','action.ventas.limpiar','action.ventas.cancelar','action.ventas.procesar'
 ];

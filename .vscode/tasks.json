@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Verificar duplicados en mesas",
+			"type": "shell",
+			"command": "mysql -u root -p\"\" sistema_cafeteria -e \"SELECT numero, codigo, COUNT(*) as rep FROM mesas WHERE activo=1 GROUP BY numero HAVING rep > 1 UNION SELECT numero, codigo, COUNT(*) as rep FROM mesas WHERE activo=1 GROUP BY codigo HAVING rep > 1;\"",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

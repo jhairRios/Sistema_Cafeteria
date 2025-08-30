@@ -345,9 +345,14 @@ export function initAjustes() {
     const dir = qs('#direccion-restaurante')?.value?.trim() || '';
     const tel = qs('#telefono-restaurante')?.value?.trim() || '';
     const em = qs('#email-restaurante')?.value?.trim() || '';
+    // Logo desde cache/config
+    let logo = '';
+    try { const ls = localStorage.getItem('restauranteConfig'); if (ls) logo = (JSON.parse(ls).logo_url)||''; } catch {}
+    if (!logo && window.__restauranteConfig && window.__restauranteConfig.logo_url) logo = window.__restauranteConfig.logo_url;
     const elNombre = document.getElementById('preview-nombre');
     const elDir = document.getElementById('preview-direccion');
     const elContacto = document.getElementById('preview-contacto');
+    const elLogo = document.getElementById('preview-logo');
     if (elNombre) elNombre.textContent = nombre;
     if (elDir) elDir.textContent = dir;
     if (elContacto) {
@@ -356,13 +361,23 @@ export function initAjustes() {
       if (em) parts.push(em);
       elContacto.textContent = parts.join(' · ');
     }
+    if (elLogo) {
+      if (logo) {
+        elLogo.innerHTML = `<img src="${logo}" alt="Logo" style="max-height:56px; max-width:56px; border-radius:10px;">`;
+      } else {
+        elLogo.innerHTML = '<i class="fas fa-store"></i>';
+      }
+    }
   }
 
   async function loadRestaurante() {
     try {
       const cfg = await api.get('/api/restaurante');
       const setVal = (id, val) => { const el = qs(id); if (el) el.value = val ?? el.value; };
-      setVal('#nombre-restaurante', cfg.nombre || '');
+    setVal('#nombre-restaurante', cfg.nombre || '');
+    // Preview de logo si existe
+    const prev = qs('#logo-preview');
+    if (prev) prev.innerHTML = cfg.logo_url ? `<img src="${cfg.logo_url}" alt="Logo" style="height:64px">` : '';
       setVal('#direccion-restaurante', cfg.direccion || '');
       setVal('#telefono-restaurante', cfg.telefono || '');
       setVal('#email-restaurante', cfg.email || '');
@@ -399,6 +414,32 @@ export function initAjustes() {
     return saved;
   }
 
+  // Subida de logo
+  qs('#logo-restaurante')?.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('logo', file);
+    try {
+      const resp = await fetch('/api/restaurante/logo', { method: 'POST', body: fd });
+      const j = await resp.json();
+      if (!resp.ok) throw new Error(j?.message || 'Error subiendo logo');
+      const prev = qs('#logo-preview'); if (prev) prev.innerHTML = j.logo_url ? `<img src="${j.logo_url}" alt="Logo" style="height:64px">` : '';
+      // Guardar en local
+      try { localStorage.setItem('restauranteConfig', JSON.stringify(j.config || {})); } catch {}
+      window.__restauranteConfig = j.config || window.__restauranteConfig;
+  // refrescar preview del encabezado
+  actualizarPreviewFactura();
+      // Notificar
+      try { window.dispatchEvent(new CustomEvent('restauranteConfigUpdated', { detail: j.config })); } catch {}
+      alert('Logo actualizado');
+    } catch (err) {
+      alert(err.message || 'No se pudo subir el logo');
+    } finally {
+      e.target.value = '';
+    }
+  });
+
   qs('#btn-guardar-ajustes')?.addEventListener('click', async () => {
     try {
       await saveRestaurante();
@@ -433,12 +474,22 @@ export function initAjustes() {
   async function refreshBackupList() {
     try {
       const items = await api.get('/api/backup');
+      const formatSize = (bytes) => {
+        const b = Number(bytes) || 0;
+        if (b < 1024) return `${b} B`;
+        const kb = b / 1024;
+        if (kb < 1024) return `${kb.toFixed(kb < 10 ? 2 : 1)} KB`;
+        const mb = kb / 1024;
+        if (mb < 1024) return `${mb.toFixed(mb < 10 ? 2 : 1)} MB`;
+        const gb = mb / 1024;
+        return `${gb.toFixed(gb < 10 ? 2 : 1)} GB`;
+      };
       // Rellenar historial
       const tbody = document.querySelector('#tabla-backups tbody');
       if (tbody) {
         tbody.innerHTML = (items||[]).map(it => {
           const date = new Date(it.mtime).toLocaleString();
-          const size = (it.size/1024/1024).toFixed(1) + ' MB';
+          const size = formatSize(it.size);
           return `<tr>
             <td>${date}</td>
             <td>${size}</td>
@@ -456,14 +507,14 @@ export function initAjustes() {
       const sz = document.querySelector('#seccion-backup .backup-size span');
       if (last) {
         if (st) st.textContent = `Último backup: ${new Date(last.mtime).toLocaleString()}`;
-        if (sz) sz.textContent = `Tamaño: ${(last.size/1024/1024).toFixed(1)} MB`;
+        if (sz) sz.textContent = `Tamaño: ${formatSize(last.size)}`;
       }
     } catch (_) {}
   }
 
   const btnCrearBackup = document.querySelector('#seccion-backup .backup-actions .btn.btn-primary');
   btnCrearBackup?.addEventListener('click', async () => {
-    const r = await api.post('/api/backup/create', {});
+    const r = await api.post('/api/backup/create', { mode: 'lite' });
     alert('Backup creado: ' + r.file);
     await refreshBackupList();
   });
@@ -504,7 +555,22 @@ export function initAjustes() {
 
   // Programación de backup automático
   const freqSel = document.getElementById('frecuencia-backup');
+  const btnProg = document.getElementById('btn-programar-backup');
+  const inpRet = document.getElementById('retencion-backup');
+  // Accionar al cambiar select (rápido)
   freqSel?.addEventListener('change', async () => {
-    try { await api.post('/api/backup/schedule', { frequency: freqSel.value }); } catch (_) {}
+    try {
+      await api.post('/api/backup/schedule', { frequency: freqSel.value, keepLast: Number(inpRet?.value || '7') });
+      alert('Backup automático programado (' + freqSel.value + ')');
+    } catch (_) {}
+  });
+  // Y también con el botón dedicado
+  btnProg?.addEventListener('click', async () => {
+    try {
+      await api.post('/api/backup/schedule', { frequency: freqSel?.value || 'semanal', keepLast: Number(inpRet?.value || '7') });
+      alert('Backup automático programado');
+    } catch (e) {
+      alert('No se pudo programar: ' + (e?.message || ''));
+    }
   });
 }

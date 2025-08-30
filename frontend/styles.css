@@ -1040,6 +1040,29 @@ tr:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Estado de bloqueo (cuando otro usuario abrió el modal de ocupar) */
+.mesa-card.bloqueada {
+  position: relative;
+  outline: 2px dashed #6c757d;
+  opacity: 0.9;
+}
+.mesa-card.bloqueada::after {
+  content: '🔒 Bloqueada';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(108, 117, 125, 0.95);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  pointer-events: none;
+}
+.mesa-card.bloqueada .btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .mesa-disponible {
   border-left: 4px solid #28a745;
 }
@@ -1220,6 +1243,51 @@ tr:hover {
   width: 100%;
   flex: 1 1 100%;
   }
+}
+
+/* ===== Reportes: filtros a la par (desktop) ===== */
+.reportes-container .filtros-container { flex-wrap: nowrap; gap: 12px; }
+.reportes-container .filtros-group {
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+}
+.reportes-container .filtros-group .filtro-item { flex: 0 0 auto; width: auto !important; }
+.reportes-container .filtros-group .form-select,
+.reportes-container .filtros-group .form-input {
+  width: 260px;
+  max-width: 100%;
+  flex: 0 0 260px;
+}
+/* Hacer más ancho el combobox de Rango de Fechas */
+.reportes-container #rango-fecha {
+  width: 320px;
+  flex: 0 0 320px;
+}
+/* Fechas personalizadas un poco más compactas */
+.reportes-container #fechas-personalizadas .form-input,
+.reportes-container #fechas-personalizadas-hasta .form-input {
+  width: 180px;
+  flex: 0 0 180px;
+}
+/* Empujar el botón de filtros avanzados a la derecha */
+.reportes-container .filtros-avanzados { margin-left: auto; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  /* En tablet/móvil, permitir que salten de línea */
+  .reportes-container .filtros-container { flex-wrap: wrap; }
+  .reportes-container .filtros-group { flex-wrap: wrap; display: flex; }
+  .reportes-container .filtros-group .form-select,
+  .reportes-container .filtros-group .form-input {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  /* En móvil, que el rango quede a 100% también */
+  .reportes-container #rango-fecha { width: 100%; flex: 1 1 100%; }
 }
 
 .acciones {
@@ -1931,6 +1999,8 @@ tr:hover {
   box-shadow: 0 6px 14px rgba(76, 110, 245, 0.25);
 }
 
+.factura-logo img { max-width: 100%; max-height: 100%; border-radius: 10px; display: block; }
+
 .factura-datos { line-height: 1.35; }
 .factura-nombre { font-weight: 600; font-size: 1.05rem; }
 .factura-line { color: #4b5563; font-size: 0.95rem; }
@@ -2438,12 +2508,7 @@ tr:hover {
     font-size: 0.9rem;
 }
 
-.filtros-avanzados {
-    display: flex;
-    justify-content: center;
-    padding-top: 1rem;
-    border-top: 1px solid #f1f3f4;
-}
+/* Contenedor del botón de filtros avanzados eliminado */
 
 /* Panel de filtros avanzados */
 .filtros-avanzados-panel {

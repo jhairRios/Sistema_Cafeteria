@@ -9,9 +9,6 @@
                 <button class="btn btn-outline" id="btn-exportar-excel">
                     <i class="fas fa-file-excel"></i> Exportar Excel
                 </button>
-                <button class="btn btn-primary" id="btn-generar-reporte">
-                    <i class="fas fa-sync"></i> Generar Reporte
-                </button>
             </div>
         </div>
 
@@ -53,72 +50,9 @@
                     <input type="date" id="fecha-hasta" class="form-input">
                 </div>
             </div>
-            
-            <div class="filtros-avanzados">
-                <button class="btn btn-outline" id="btn-filtros-avanzados">
-                    <i class="fas fa-filter"></i> Filtros Avanzados
-                </button>
-            </div>
         </div>
 
-        <!-- Panel de filtros avanzados -->
-        <div class="filtros-avanzados-panel" id="panel-filtros-avanzados" style="display: none;">
-            <h3>Filtros Avanzados</h3>
-            <div class="filtros-avanzados-content">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="filtro-empleado">Empleado</label>
-                        <select id="filtro-empleado" class="form-select">
-                            <option value="">Todos los empleados</option>
-                            <option value="1">María González</option>
-                            <option value="2">Carlos Rodríguez</option>
-                            <option value="3">Ana Martínez</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="filtro-mesa">Mesa</label>
-                        <select id="filtro-mesa" class="form-select">
-                            <option value="">Todas las mesas</option>
-                            <option value="1">Mesa 1</option>
-                            <option value="2">Mesa 2</option>
-                            <option value="3">Mesa 3</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="filtro-producto">Producto</label>
-                        <select id="filtro-producto" class="form-select">
-                            <option value="">Todos los productos</option>
-                            <option value="1">Café Americano</option>
-                            <option value="2">Capuchino</option>
-                            <option value="3">Sandwich de Pollo</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="filtro-categoria">Categoría</label>
-                        <select id="filtro-categoria" class="form-select">
-                            <option value="">Todas las categorías</option>
-                            <option value="bebidas-calientes">Bebidas Calientes</option>
-                            <option value="bebidas-frias">Bebidas Frías</option>
-                            <option value="comida">Comida</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button class="btn btn-outline" id="btn-limpiar-filtros">
-                        <i class="fas fa-broom"></i> Limpiar Filtros
-                    </button>
-                    <button class="btn btn-primary" id="btn-aplicar-filtros">
-                        <i class="fas fa-check"></i> Aplicar Filtros
-                    </button>
-                </div>
-            </div>
-        </div>
+        
 
         <!-- Resumen de métricas -->
         <div class="metricas-resumen">
@@ -127,7 +61,7 @@
                     <i class="fas fa-dollar-sign"></i>
                 </div>
                 <div class="metrica-info">
-                    <div class="metrica-valor" id="total-ventas">$0.00</div>
+                    <div class="metrica-valor" id="total-ventas">L.0.00</div>
                     <div class="metrica-label">Ventas Totales</div>
                 </div>
             </div>
@@ -157,50 +91,60 @@
                     <i class="fas fa-percentage"></i>
                 </div>
                 <div class="metrica-info">
-                    <div class="metrica-valor" id="promedio-mesa">$0.00</div>
+                    <div class="metrica-valor" id="promedio-mesa">L.0.00</div>
                     <div class="metrica-label">Promedio por Mesa</div>
                 </div>
             </div>
         </div>
 
-        <!-- Gráficos y visualizaciones -->
+        <!-- Tablas resumidas (en lugar de gráficas) -->
         <div class="reporte-graficos">
             <div class="grafico-container">
                 <div class="grafico-header">
                     <h3>Ventas por Día</h3>
-                    <div class="grafico-acciones">
-                        <button class="btn btn-sm btn-outline active" data-tipo="diario">
-                            Diario
-                        </button>
-                        <button class="btn btn-sm btn-outline" data-tipo="semanal">
-                            Semanal
-                        </button>
-                        <button class="btn btn-sm btn-outline" data-tipo="mensual">
-                            Mensual
-                        </button>
-                    </div>
                 </div>
                 <div class="grafico-content">
-                    <canvas id="grafico-ventas" height="300"></canvas>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-ventas-por-dia">
+                            <thead>
+                                <tr><th>Fecha</th><th>Total</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            
+
             <div class="graficos-secundarios">
                 <div class="grafico-container">
                     <div class="grafico-header">
                         <h3>Productos Más Vendidos</h3>
                     </div>
                     <div class="grafico-content">
-                        <canvas id="grafico-productos" height="250"></canvas>
+                        <div class="table-container">
+                            <table class="data-table" id="tabla-top-productos">
+                                <thead>
+                                    <tr><th>Producto</th><th>Cantidad</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                
+
                 <div class="grafico-container">
                     <div class="grafico-header">
                         <h3>Ventas por Categoría</h3>
                     </div>
                     <div class="grafico-content">
-                        <canvas id="grafico-categorias" height="250"></canvas>
+                        <div class="table-container">
+                            <table class="data-table" id="tabla-ventas-categorias">
+                                <thead>
+                                    <tr><th>Categoría</th><th>Cantidad</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -259,11 +203,11 @@
                     </div>
                     <div class="resumen-item">
                         <span>Total Ventas:</span>
-                        <span id="resumen-total-ventas">$0.00</span>
+                        <span id="resumen-total-ventas">L.0.00</span>
                     </div>
                     <div class="resumen-item">
                         <span>Venta Promedio:</span>
-                        <span id="resumen-promedio-venta">$0.00</span>
+                        <span id="resumen-promedio-venta">L.0.00</span>
                     </div>
                     <div class="resumen-item">
                         <span>Producto Más Vendido:</span>

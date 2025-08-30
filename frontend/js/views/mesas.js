@@ -1,5 +1,6 @@
 // js/views/mesas.js
 import { Mesas as MesasAPI } from '../core/api.js';
+import { getSocket, emit as emitSocket } from '../core/sockets.js';
 
 export function initMesas() {
     console.log('Inicializando vista Mesas');
@@ -9,6 +10,7 @@ export function initMesas() {
     try { permisos = JSON.parse(sessionStorage.getItem('permisos')||'[]'); } catch(_) {}
     const canOcupar = permisos.includes('action.mesas.ocupar');
     const canCerrar = permisos.includes('action.mesas.cerrar');
+        const canEliminar = permisos.includes('action.mesas.delete');
 
     const btnAgregarMesa = document.getElementById('btn-agregar-mesa');
     const modalMesa = document.getElementById('modal-mesa');
@@ -37,13 +39,19 @@ export function initMesas() {
         const t = document.getElementById('modal-titulo-mesa'); if (t) t.textContent = 'Agregar Mesa';
         const id = document.getElementById('mesa-id'); if (id) id.value = '';
         formMesa?.reset();
-        // Autocompletar siguiente número
-        const nextNum = (() => {
-            if (!Array.isArray(mesasCache) || mesasCache.length === 0) return 1;
-            const maxNum = Math.max(...mesasCache.map(m => Number(m.numero) || 0));
-            return (isFinite(maxNum) ? maxNum : 0) + 1;
-        })();
-        const numInput = document.getElementById('mesa-numero'); if (numInput) numInput.value = String(nextNum);
+    // Antes de mostrar el modal, recargar la lista real de mesas
+    MesasAPI.list().then(mesas => {
+        mesasCache = Array.isArray(mesas) ? mesas : [];
+        let usados = mesasCache.map(m => Number(m.numero)).filter(n => !isNaN(n));
+        let nextNum = 1;
+        while (usados.includes(nextNum)) nextNum++;
+        const numInput = document.getElementById('mesa-numero');
+        if (numInput) numInput.value = String(nextNum);
+        const capSel = document.getElementById('mesa-capacidad'); if (capSel && !capSel.value) capSel.value = '4';
+        const ubiSel = document.getElementById('mesa-ubicacion'); if (ubiSel && !ubiSel.value) ubiSel.value = 'interior';
+        const estSel = document.getElementById('mesa-estado'); if (estSel && !estSel.value) estSel.value = 'disponible';
+        modalMesa && (modalMesa.style.display = 'block');
+    });
         const capSel = document.getElementById('mesa-capacidad'); if (capSel && !capSel.value) capSel.value = '4';
         const ubiSel = document.getElementById('mesa-ubicacion'); if (ubiSel && !ubiSel.value) ubiSel.value = 'interior';
         const estSel = document.getElementById('mesa-estado'); if (estSel && !estSel.value) estSel.value = 'disponible';
@@ -86,16 +94,18 @@ export function initMesas() {
                 detalle: null,
             };
             const creada = await MesasAPI.create(payload);
-            // Actualizar cache y UI
             if (creada) {
-                if (Array.isArray(mesasCache)) mesasCache.push(creada);
-                modalMesa && (modalMesa.style.display = 'none');
+                // Recargar la lista real de mesas después de crear
                 await cargarMesas();
+                modalMesa && (modalMesa.style.display = 'none');
                 alert(`Mesa ${creada.numero} creada`);
             }
         } catch (err) {
+            let msg = err?.message || 'Error desconocido';
+            if (err?.data && err.data.message) msg = err.data.message;
+            if (err?.response && err.response.message) msg = err.response.message;
             console.error('Error creando mesa', err);
-            alert(`No se pudo crear la mesa: ${err?.message || 'Error desconocido'}`);
+            alert(`No se pudo crear la mesa: ${msg}`);
         }
     });
 
@@ -104,19 +114,21 @@ export function initMesas() {
     function setMesasState(state) { localStorage.setItem('mesasState', JSON.stringify(state)); }
     function saveMesaState(mesaId, nuevoEstado, datos = {}) { const state = getMesasState(); state[mesaId] = { estado: nuevoEstado, datos }; setMesasState(state); try { window.dispatchEvent(new CustomEvent('mesasStateChanged',{detail:{mesaId,estado:nuevoEstado,datos}})); } catch(_){} }
 
-    function renderMesaCard(m) {
+    function renderMesaCard(m, visualIndex) {
         const div = document.createElement('div');
-    const estadoClass = m.estado === 'ocupada' ? 'ocupada' : 'disponible';
+        const estadoClass = m.estado === 'ocupada' ? 'ocupada' : 'disponible';
         div.className = `mesa-card ${estadoClass}`;
         div.dataset.id = m.id;
         div.dataset.capacidad = m.capacidad;
-    div.dataset.estado = estadoClass;
+        div.dataset.estado = estadoClass;
         const detalle = typeof m.detalle === 'string' ? safeJSON(m.detalle) : (m.detalle || {});
         const cliente = detalle.cliente || null;
         const horario = detalle.hora || null;
+        // Usar número visual secuencial
+        const numeroVisual = visualIndex + 1;
         div.innerHTML = `
             <div class="mesa-header">
-                <span class="mesa-numero">${m.nombre || `Mesa ${m.numero}`}</span>
+                <span class="mesa-numero">Mesa ${numeroVisual}</span>
                 <span class="mesa-capacidad"><i class="fas fa-user"></i> ${m.capacidad}</span>
             </div>
             <div class="mesa-estado ${estadoClass === 'disponible' ? 'estado-disponible' : 'estado-ocupada'}">
@@ -126,9 +138,10 @@ export function initMesas() {
             <div class="mesa-acciones"></div>
         `;
         const acc = div.querySelector('.mesa-acciones');
-    if (estadoClass === 'disponible') {
+        if (estadoClass === 'disponible') {
             acc.innerHTML = `
-        ${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${m.id}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}`;
+        ${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${m.id}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}
+        ${canEliminar ? `<button class="btn btn-sm btn-danger btn-eliminar" data-id="${m.id}"><i class="fas fa-trash"></i> Eliminar</button>` : ''}`;
         } else if (estadoClass === 'ocupada') {
             acc.innerHTML = `
         <button class="btn btn-sm btn-info btn-ver" data-id="${m.id}"><i class="fas fa-eye"></i> Ver</button>
@@ -157,7 +170,7 @@ export function initMesas() {
             return;
         }
         mesasCache = mesas.slice();
-        mesas.forEach(m => grid.appendChild(renderMesaCard(m)));
+    mesas.forEach((m, idx) => grid.appendChild(renderMesaCard(m, idx)));
         wireEventosMesas();
         actualizarEstadisticas();
         rehydrateMesasFromStorage();
@@ -167,36 +180,40 @@ export function initMesas() {
         const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
         if (!mesa) return;
     mesa.classList.remove('disponible', 'ocupada', 'reservada');
-        mesa.classList.add(nuevoEstado);
-        mesa.dataset.estado = nuevoEstado;
-        const estadoElement = mesa.querySelector('.mesa-estado');
-        if (!estadoElement) return;
-        estadoElement.className = 'mesa-estado';
+    mesa.classList.add(nuevoEstado);
+    mesa.dataset.estado = nuevoEstado;
+    const estadoElement = mesa.querySelector('.mesa-estado');
+    if (!estadoElement) return;
+    estadoElement.className = 'mesa-estado';
 
-        if (nuevoEstado === 'disponible') {
-            estadoElement.classList.add('estado-disponible');
-            estadoElement.innerHTML = '<i class="fas fa-check-circle"></i> Disponible';
-            mesa.querySelector('.mesa-info')?.remove();
-            mesa.querySelector('.mesa-acciones').innerHTML = `
-    ${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${mesaId}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}`;
-        } else if (nuevoEstado === 'ocupada') {
-            estadoElement.classList.add('estado-ocupada');
-            estadoElement.innerHTML = '<i class="fas fa-users"></i> Ocupada';
-            if (!mesa.querySelector('.mesa-info')) {
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'mesa-info';
-                infoDiv.innerHTML = `<div class="mesa-cliente">${datos.cliente || 'Cliente'}</div><div class="mesa-tiempo">00:00</div>`;
-                estadoElement.after(infoDiv);
-            } else {
-                const c = mesa.querySelector('.mesa-cliente'); if (c && datos.cliente) c.textContent = datos.cliente;
-            }
-            mesa.querySelector('.mesa-acciones').innerHTML = `
-        <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}"><i class="fas fa-eye"></i> Ver</button>
-        ${canCerrar ? `<button class=\"btn btn-sm btn-primary btn-cerrar\" data-id=\"${mesaId}\"><i class=\"fas fa-check\"></i> Cerrar</button>` : ''}`;
-            if (options.navigateOnOcupar) {
-                window.appState = window.appState || {}; window.appState.currentMesa = { id: mesaId, cliente: datos.cliente || 'Cliente', personas: datos.personas || null };
-                window.__app?.loadView && window.__app.loadView('ventas-rapidas');
-            }
+    // Siempre limpiar bloqueo visual y habilitar botón al cambiar a disponible
+    if (nuevoEstado === 'disponible') {
+        mesa.classList.remove('bloqueada');
+        try { mesa.querySelector('.btn-ocupar')?.removeAttribute('disabled'); } catch {}
+        estadoElement.classList.add('estado-disponible');
+        estadoElement.innerHTML = '<i class="fas fa-check-circle"></i> Disponible';
+        mesa.querySelector('.mesa-info')?.remove();
+        mesa.querySelector('.mesa-acciones').innerHTML = `
+            ${canOcupar ? `<button class=\"btn btn-sm btn-success btn-ocupar\" data-id=\"${mesaId}\"><i class=\"fas fa-play\"></i> Ocupar</button>` : ''}
+            ${canEliminar ? `<button class=\"btn btn-sm btn-danger btn-eliminar\" data-id=\"${mesaId}\"><i class=\"fas fa-trash\"></i> Eliminar</button>` : ''}`;
+    } else if (nuevoEstado === 'ocupada') {
+        estadoElement.classList.add('estado-ocupada');
+        estadoElement.innerHTML = '<i class="fas fa-users"></i> Ocupada';
+        if (!mesa.querySelector('.mesa-info')) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'mesa-info';
+            infoDiv.innerHTML = `<div class="mesa-cliente">${datos.cliente || 'Cliente'}</div><div class="mesa-tiempo">00:00</div>`;
+            estadoElement.after(infoDiv);
+        } else {
+            const c = mesa.querySelector('.mesa-cliente'); if (c && datos.cliente) c.textContent = datos.cliente;
+        }
+        mesa.querySelector('.mesa-acciones').innerHTML = `
+            <button class="btn btn-sm btn-info btn-ver" data-id="${mesaId}"><i class="fas fa-eye"></i> Ver</button>
+            ${canCerrar ? `<button class=\"btn btn-sm btn-primary btn-cerrar\" data-id=\"${mesaId}\"><i class=\"fas fa-check\"></i> Cerrar</button>` : ''}`;
+        if (options.navigateOnOcupar) {
+            window.appState = window.appState || {}; window.appState.currentMesa = { id: mesaId, cliente: datos.cliente || 'Cliente', personas: datos.personas || null };
+            window.__app?.loadView && window.__app.loadView('ventas-rapidas');
+        }
     }
 
         setTimeout(() => {
@@ -205,6 +222,12 @@ export function initMesas() {
                 document.getElementById('mesa-ocupar-id').value = mesaId;
                 formOcupar?.reset();
                 modalOcupar && (modalOcupar.style.display = 'block');
+            });
+            mesa.querySelector('.btn-eliminar')?.addEventListener('click', async () => {
+                if (!canEliminar) return;
+                if (mesa.dataset.estado !== 'disponible') return alert('Solo puedes eliminar mesas en estado disponible.');
+                if (!confirm('¿Eliminar esta mesa?')) return;
+                try { await MesasAPI.remove(mesaId); await cargarMesas(); alert('Mesa eliminada.'); } catch { alert('No se pudo eliminar la mesa.'); }
             });
             // reservar eliminado
             mesa.querySelector('.btn-cerrar')?.addEventListener('click', () => {
@@ -231,6 +254,11 @@ export function initMesas() {
                 const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
     if (mesa.dataset.estado === 'disponible') {
             if (!canOcupar) return;
+                                        // Lock mesa por sockets
+                                        const s = getSocket();
+                                        if (s) emitSocket('mesas:lock', { mesaId }, (resp) => {
+                                            if (!resp?.ok) { return alert(resp?.error || 'No se pudo bloquear la mesa'); }
+                                        });
                     document.getElementById('mesa-ocupar-id').value = mesaId;
                     formOcupar?.reset();
                     modalOcupar && (modalOcupar.style.display = 'block');
@@ -267,7 +295,46 @@ export function initMesas() {
                 alert(mensaje);
             });
         });
+        // Eliminar
+        // Eliminar (se maneja abajo con guard para evitar doble enlace)
+            // Enlazar el evento de eliminación también tras render dinámico
+            document.querySelectorAll('.btn-eliminar').forEach(btn => {
+                if (btn.__wiredDelete) return; btn.__wiredDelete = true;
+                btn.addEventListener('click', async () => {
+                    if (!canEliminar) return;
+                    const mesaId = btn.dataset.id;
+                    const card = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+                    if (!card) return;
+                    if (card.dataset.estado !== 'disponible') return alert('Solo puedes eliminar mesas en estado disponible.');
+                    if (!confirm('¿Eliminar esta mesa?')) return;
+                    try { await MesasAPI.remove(mesaId); await cargarMesas(); alert('Mesa eliminada.'); } catch (e) { alert('No se pudo eliminar la mesa.'); }
+                });
+            });
     }
+
+        // Suscripciones sockets para cambios en vivo
+        const sock = getSocket();
+        if (sock) {
+            sock.on('mesas:locked', ({ mesaId }) => {
+                const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+                if (mesa && mesa.dataset.estado === 'disponible') {
+                    mesa.classList.add('bloqueada');
+                    mesa.querySelector('.btn-ocupar')?.setAttribute('disabled','disabled');
+                }
+            });
+            sock.on('mesas:unlocked', ({ mesaId }) => {
+                const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
+                if (mesa) {
+                    mesa.classList.remove('bloqueada');
+                    mesa.querySelector('.btn-ocupar')?.removeAttribute('disabled');
+                }
+            });
+            sock.on('mesas:changed', ({ mesaId, estado, detalle }) => {
+                if (estado === 'eliminada') { cargarMesas(); return; }
+                try { applyMesaState(mesaId, estado, (typeof detalle === 'string' ? JSON.parse(detalle) : (detalle || {}))); } catch {}
+                actualizarEstadisticas();
+            });
+        }
 
     formOcupar?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -290,6 +357,9 @@ export function initMesas() {
         const mesa = document.querySelector(`.mesa-card[data-id="${mesaId}"]`);
         const estadoActual = mesa.dataset.estado;
         if (estadoActual === nuevoEstado) return;
+    // limpiar bloqueo visual si existía
+    mesa.classList.remove('bloqueada');
+    try { mesa.querySelector('.btn-ocupar')?.removeAttribute('disabled'); } catch {}
         mesa.classList.add('cambiando-estado');
         setTimeout(() => {
             mesa.classList.remove('disponible', 'ocupada', 'reservada');
@@ -302,8 +372,9 @@ export function initMesas() {
                     estadoElement.classList.add('estado-disponible');
                     estadoElement.innerHTML = '<i class="fas fa-check-circle"></i> Disponible';
                     mesa.querySelector('.mesa-info')?.remove();
-                    mesa.querySelector('.mesa-acciones').innerHTML = `
-            <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}"><i class="fas fa-play"></i> Ocupar</button>`;
+            mesa.querySelector('.mesa-acciones').innerHTML = `
+        <button class="btn btn-sm btn-success btn-ocupar" data-id="${mesaId}"><i class="fas fa-play"></i> Ocupar</button>
+        ${canEliminar ? `<button class=\"btn btn-sm btn-danger btn-eliminar\" data-id=\"${mesaId}\"><i class=\"fas fa-trash\"></i> Eliminar</button>` : ''}`;
                     saveMesaState(mesaId, 'disponible', {});
                     break;
                 case 'ocupada':
@@ -331,6 +402,13 @@ export function initMesas() {
                 // reservar eliminado
                 mesa.querySelector('.btn-cerrar')?.addEventListener('click', () => {
                     if (confirm('¿Estás seguro de que quieres cerrar esta mesa?')) cambiarEstadoMesa(mesaId, 'disponible');
+                });
+                mesa.querySelector('.btn-eliminar')?.addEventListener('click', async () => {
+                    if (!canEliminar) return;
+                    const card = mesa;
+                    if (card.dataset.estado !== 'disponible') return alert('Solo puedes eliminar mesas en estado disponible.');
+                    if (!confirm('¿Eliminar esta mesa?')) return;
+                    try { await MesasAPI.remove(mesaId); await cargarMesas(); alert('Mesa eliminada.'); } catch { alert('No se pudo eliminar la mesa.'); }
                 });
                 mesa.querySelector('.btn-ver')?.addEventListener('click', () => { /* ver detalles */ });
             }, 100);

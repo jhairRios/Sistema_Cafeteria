@@ -202,6 +202,14 @@
                         <div class="ajuste-grupo">
                             <h3>Información Básica</h3>
                             <div class="form-group">
+                                <label for="logo-restaurante">Logo (PNG/JPG/WEBP, máx 2MB)</label>
+                                <input type="file" id="logo-restaurante" accept="image/png,image/jpeg,image/webp" class="form-input">
+                                <div class="help-text">El logo aparecerá en reportes y facturas.</div>
+                                <div id="logo-preview" style="margin-top:8px;">
+                                    <!-- preview -->
+                                </div>
+                            </div>
+                            <div class="form-group">
                                 <label for="nombre-restaurante">Nombre del Restaurante</label>
                                 <input type="text" id="nombre-restaurante" class="form-input" value="Mi Restaurante" placeholder="Ej. Cafetería Central">
                                 <div class="help-text">Nombre comercial que verán tus clientes.</div>
@@ -336,7 +344,7 @@
                         <div class="ajuste-grupo preview-factura-card">
                             <h3>Vista previa del encabezado de factura</h3>
                             <div class="factura-preview">
-                                <div class="factura-logo" aria-hidden="true"><i class="fas fa-store"></i></div>
+                                <div class="factura-logo" id="preview-logo" aria-hidden="true"><i class="fas fa-store"></i></div>
                                 <div class="factura-datos">
                                     <div class="factura-nombre" id="preview-nombre">Mi Restaurante</div>
                                     <div class="factura-line" id="preview-direccion">Av. Principal #123, Ciudad</div>

@@ -41,7 +41,7 @@ export function initProductos() {
   function valueOf(sel) { const el = document.querySelector(sel); return el ? el.value.trim() : ''; }
   function numberOf(sel) { const v = parseFloat(valueOf(sel)); return isNaN(v) ? 0 : v; }
 
-  function formatMoney(v) { return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(v||0)); }
+  function formatMoney(v) { return `L${Number(v||0).toFixed(2)}`; }
 
   function estadoFrom(p) {
     if (p.stock <= 0) return { label: 'Agotado', cls: 'badge-danger' };

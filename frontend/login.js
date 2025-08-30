@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ correo: email, contrasena: password })
         });
 
-        if (res.ok) {
+  if (res.ok) {
           const data = await res.json();
           // Limpiar vestigios previos
           try {
@@ -37,10 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
           sessionStorage.setItem('nombreUsuario', data.user?.nombre || 'Usuario');
           // Guardar rol actual para poder refrescar permisos si cambian en Ajustes
           try {
+            if (data.user?.id) sessionStorage.setItem('userId', String(data.user.id));
             if (data.user?.rol?.id) sessionStorage.setItem('rolId', String(data.user.rol.id));
             if (data.user?.rol?.nombre) sessionStorage.setItem('rolNombre', String(data.user.rol.nombre));
           } catch (_) {}
           try { sessionStorage.setItem('permisos', JSON.stringify(data.permisos || [])); } catch(_) {}
+          try { if (data.sessionId) sessionStorage.setItem('sessionId', data.sessionId); } catch {}
           showToast({
             title: 'Bienvenido',
             message: `Hola ${data.user?.nombre || 'Usuario'}`,
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timeout: 1200
           });
           setTimeout(() => window.location.replace('index.html'), 800);
-        } else {
+  } else {
           const errorText = await res.text();
           showToast({
             title: 'Error de inicio de sesión',

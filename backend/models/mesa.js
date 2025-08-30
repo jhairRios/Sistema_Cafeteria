@@ -9,9 +9,9 @@ async function getAll() {
 async function create({ codigo, numero, nombre, capacidad = 4, ubicacion = 'interior', estado = 'disponible', detalle = null }) {
   const pool = getPool();
   let attempts = 0;
+  let lastError = null;
   while (attempts < 3) {
     attempts++;
-    // Si no viene número, calcular siguiente (max(numero) + 1 de activos)
     let num = Number(numero);
     if (!num || !isFinite(num) || num < 1) {
       const [maxRows] = await pool.query('SELECT COALESCE(MAX(numero),0) AS maxnum FROM mesas WHERE activo=1');
@@ -31,14 +31,29 @@ async function create({ codigo, numero, nombre, capacidad = 4, ubicacion = 'inte
       const [rows] = await pool.query('SELECT * FROM mesas WHERE id=?', [res.insertId]);
       return rows[0];
     } catch (e) {
-      // ER_DUP_ENTRY por concurrencia: recalcular y reintentar
+      lastError = e;
       if (e && e.code === 'ER_DUP_ENTRY') {
         continue;
       }
-      throw e;
+      // Propagar mensaje real
+      // Propagar error con sqlMessage si existe
+      if (e && e.sqlMessage) {
+        const err = new Error(e.sqlMessage);
+        err.sqlMessage = e.sqlMessage;
+        throw err;
+      }
+      throw new Error(e?.message || 'Error al crear mesa');
     }
   }
-  // Si no se pudo tras reintentos
+  // Si no se pudo tras reintentos, propagar último error real
+  if (lastError) {
+    if (lastError.sqlMessage) {
+      const err = new Error(lastError.sqlMessage);
+      err.sqlMessage = lastError.sqlMessage;
+      throw err;
+    }
+    throw new Error(lastError?.message || 'No se pudo crear la mesa por colisión de códigos repetidos');
+  }
   throw new Error('No se pudo crear la mesa por colisión de códigos repetidos');
 }
 
@@ -130,3 +145,41 @@ async function bulkGenerate({ total, dist = { '2': 0, '4': 0, '6': 0, '8': 0 }, 
 }
 
 module.exports = { getAll, getById, create, update, remove, setEstado, bulkGenerate };
+
+// Renumerar todas las mesas activas de forma secuencial (1..N) y rehacer nombre/código
+// Nota: se hace en dos fases para evitar colisiones de UNIQUE(codigo)
+async function renumberSequential() {
+  const pool = getPool();
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [rows] = await conn.query('SELECT id FROM mesas WHERE activo=1 ORDER BY numero ASC, id ASC');
+    const ts = Date.now();
+    // Fase 1: codigos temporales únicos
+    for (const r of rows) {
+      await conn.query('UPDATE mesas SET codigo=?, updated_at=NOW() WHERE id=?', [
+        `MESA-TEMP-${r.id}-${ts}`,
+        r.id,
+      ]);
+    }
+    // Fase 2: aplicar numeración final
+    let idx = 0;
+    for (const r of rows) {
+      idx += 1;
+      const numero = idx;
+      const codigo = buildCodigo(numero);
+      const nombre = `Mesa ${numero}`;
+      await conn.query('UPDATE mesas SET numero=?, nombre=?, codigo=?, updated_at=NOW() WHERE id=?', [
+        numero, nombre, codigo, r.id,
+      ]);
+    }
+    await conn.commit();
+  } catch (e) {
+    try { await conn.rollback(); } catch {}
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports.renumberSequential = renumberSequential;

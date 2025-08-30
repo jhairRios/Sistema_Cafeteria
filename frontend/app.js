@@ -947,11 +947,11 @@ function initVentaRapidaView() {
         
         // Actualizar UI
         if (cantidadItems) cantidadItems.textContent = `${carrito.length} items`;
-        if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
-        if (impuestosElement) impuestosElement.textContent = `$${impuestos.toFixed(2)}`;
-        if (totalFinalElement) totalFinalElement.textContent = `$${total.toFixed(2)}`;
-        if (totalVentaElement) totalVentaElement.textContent = `$${total.toFixed(2)}`;
-        if (pagoTotal) pagoTotal.textContent = `$${total.toFixed(2)}`;
+    if (subtotalElement) subtotalElement.textContent = `L ${subtotal.toFixed(2)}`;
+    if (impuestosElement) impuestosElement.textContent = `L ${impuestos.toFixed(2)}`;
+    if (totalFinalElement) totalFinalElement.textContent = `L ${total.toFixed(2)}`;
+    if (totalVentaElement) totalVentaElement.textContent = `L ${total.toFixed(2)}`;
+    if (pagoTotal) pagoTotal.textContent = `L ${total.toFixed(2)}`;
         
         // Mostrar/ocultar carrito vacío
         if (carrito.length === 0) {
@@ -975,8 +975,8 @@ function initVentaRapidaView() {
                                 <button class="cantidad-btn" data-action="increase" data-id="${item.id}">+</button>
                             </div>
                         </td>
-                        <td>$${item.precio.toFixed(2)}</td>
-                        <td>$${item.subtotal.toFixed(2)}</td>
+                        <td>L ${item.precio.toFixed(2)}</td>
+                        <td>L ${item.subtotal.toFixed(2)}</td>
                         <td>
                             <button class="btn-eliminar-item" data-id="${item.id}">
                                 <i class="fas fa-trash"></i>
@@ -1092,7 +1092,7 @@ function initVentaRapidaView() {
         montoRecibido.addEventListener('input', (e) => {
             const monto = parseFloat(e.target.value) || 0;
             const cambio = monto - total;
-            if (pagoCambio) pagoCambio.textContent = `$${cambio >= 0 ? cambio.toFixed(2) : '0.00'}`;
+            if (pagoCambio) pagoCambio.textContent = `L ${cambio >= 0 ? cambio.toFixed(2) : '0.00'}`;
         });
     }
     
@@ -1139,6 +1139,7 @@ function initVentaRapidaView() {
                     if (cache) cfg = JSON.parse(cache);
                 } catch {}
                 const negocio = cfg.nombre || 'Cafetería Sistema';
+                const logo = cfg.logo_url || '';
                 const direccion = cfg.direccion || 'Calle 123, Ciudad';
                 const telefono = cfg.telefono || '';
                 const email = cfg.email || '';
@@ -1186,6 +1187,7 @@ function initVentaRapidaView() {
 </style></head>
 <body>
     <div class="header">
+        ${logo ? `<div style="margin-bottom:6px;"><img src="${logo}" alt="Logo" style="height:56px; border-radius:8px;"></div>` : ''}
         <h1>${negocio}</h1>
         <div class="meta">${direccion}</div>
         ${contactoLinea ? `<div class="meta">${contactoLinea}</div>` : ''}
@@ -1195,21 +1197,21 @@ function initVentaRapidaView() {
     <table>
         <thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead>
         <tbody>
-            ${items.map(i => `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>$${i.precio.toFixed(2)}</td><td>$${i.subtotal.toFixed(2)}</td></tr>`).join('')}
+            ${items.map(i => `<tr><td>${i.nombre}</td><td>${i.cantidad}</td><td>L ${i.precio.toFixed(2)}</td><td>L ${i.subtotal.toFixed(2)}</td></tr>`).join('')}
         </tbody>
     </table>
     <div class="totales">
-    <div><span>Base:</span><span>$${base.toFixed(2)}</span></div>
-    <div><span>IVA (${(ivaRate*100).toFixed(2)}%):</span><span>$${iva.toFixed(2)}</span></div>
-    ${propRate > 0 ? `<div><span>Propina (${(propRate*100).toFixed(2)}%):</span><span>$${propina.toFixed(2)}</span></div>` : ''}
-    <div class="final"><span>Total:</span><span>$${totalCalculado.toFixed(2)}</span></div>
+    <div><span>Base:</span><span>L ${base.toFixed(2)}</span></div>
+    <div><span>IVA (${(ivaRate*100).toFixed(2)}%):</span><span>L ${iva.toFixed(2)}</span></div>
+    ${propRate > 0 ? `<div><span>Propina (${(propRate*100).toFixed(2)}%):</span><span>L ${propina.toFixed(2)}</span></div>` : ''}
+    <div class="final"><span>Total:</span><span>L ${totalCalculado.toFixed(2)}</span></div>
     </div>
     <div class="footer">¡Gracias por su compra!</div>
     <div class="no-print" style="text-align:center"><button onclick="window.print()">Imprimir</button></div>
 </body></html>`;
 
                 // Ticket de cocina (formato angosto)
-                const mesaLinea = mesaCtx ? `<div>Mesa ${mesaCtx.id} · ${mesaCtx.cliente || ''}</div>` : '';
+                const clienteNombre = (mesaCtx && mesaCtx.cliente) ? mesaCtx.cliente : 'Venta Rápida';
                 const ticketHtml = `
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Ticket Cocina</title>
@@ -1218,26 +1220,48 @@ function initVentaRapidaView() {
     body { font-family: monospace; font-size: 12px; color:#111; }
     .hdr { text-align:center; }
     .line { border-top:1px dashed #000; margin:6px 0; }
-    .item { display:flex; justify-content:space-between; }
+    .item { display:flex; justify-content:flex-start; }
     .strong { font-weight:700; }
     @media print { .no-print { display:none; } }
 </style></head>
 <body>
     <div class="hdr">
         <div class="strong">Ticket Cocina</div>
-        <div>${negocio}</div>
-        <div>${ahora.toLocaleString()}</div>
-    ${mesaLinea}
+    ${mesaCtx ? `<div class="strong">Mesa ${mesaCtx.id}</div>` : ''}
+    <div>Cliente: ${clienteNombre}</div>
+    <div>${ahora.toLocaleString()}</div>
     </div>
     <div class="line"></div>
-    ${items.map(i => `<div class="item"><span>${i.cantidad} x ${i.nombre}</span><span>$${i.subtotal.toFixed(2)}</span></div>`).join('')}
-    <div class="line"></div>
-    <div>Total: $${totalVenta.toFixed(2)}</div>
+    ${items.map(i => `<div class="item"><span>${i.cantidad} x ${i.nombre}</span></div>`).join('')}
     <div class="no-print" style="text-align:center; margin-top:8px"><button onclick="window.print()">Imprimir</button></div>
 </body></html>`;
 
-                abrirVentanaImpresion(facturaHtml, 'Factura');
-                abrirVentanaImpresion(ticketHtml, 'TicketCocina');
+                // Imprimir primero Ticket y al finalizar imprimir Factura
+                const winTicket = window.open('', 'TicketCocina', 'width=420,height=600');
+                if (winTicket) {
+                    winTicket.document.open();
+                    winTicket.document.write(ticketHtml);
+                    winTicket.document.close();
+                    let facturaAbierta = false;
+                    const abrirFactura = () => {
+                        if (facturaAbierta) return; facturaAbierta = true;
+                        const winFactura = window.open('', 'Factura', 'width=800,height=600');
+                        if (!winFactura) return;
+                        winFactura.document.open();
+                        winFactura.document.write(facturaHtml);
+                        winFactura.document.close();
+                        winFactura.onload = () => { try { winFactura.focus(); winFactura.print(); } catch {} };
+                    };
+                    winTicket.onload = () => { try { winTicket.focus(); winTicket.print(); } catch {} };
+                    // Al terminar la impresión del ticket, abrir/imprimir factura
+                    winTicket.onafterprint = abrirFactura;
+                    // Fallback: por si onafterprint no dispara en algunos navegadores
+                    setTimeout(abrirFactura, 2000);
+                } else {
+                    // Fallback si no se puede abrir: al menos intenta abrir ambas ventanas
+                    abrirVentanaImpresion(ticketHtml, 'TicketCocina');
+                    setTimeout(() => abrirVentanaImpresion(facturaHtml, 'Factura'), 200);
+                }
         }
 
         function abrirVentanaImpresion(html, title) {
@@ -2003,13 +2027,23 @@ function initAjustesView() {
     // ====== BACKUP: acciones ======
     async function cargarBackups() {
         try {
+            const formatSize = (bytes) => {
+                const b = Number(bytes) || 0;
+                if (b < 1024) return `${b} B`;
+                const kb = b / 1024;
+                if (kb < 1024) return `${kb.toFixed(kb < 10 ? 2 : 1)} KB`;
+                const mb = kb / 1024;
+                if (mb < 1024) return `${mb.toFixed(mb < 10 ? 2 : 1)} MB`;
+                const gb = mb / 1024;
+                return `${gb.toFixed(gb < 10 ? 2 : 1)} GB`;
+            };
             const r = await fetch('/api/backup');
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const items = await r.json();
             if (tablaBackups) {
                 tablaBackups.innerHTML = (items || []).map(it => {
                     const fecha = new Date(it.mtime).toLocaleString();
-                    const tam = (Number(it.size) / (1024*1024)).toFixed(2) + ' MB';
+                    const tam = formatSize(it.size);
                     const f = (it.file||'').toLowerCase();
                     const tipo = f.endsWith('.sql.gz') ? 'SQL (gz)' : (f.endsWith('.sql') ? 'SQL' : 'JSON');
                     const chk = it.checksum ? `<div class="muted">${it.checksum.slice(0,12)}…</div>` : '';
@@ -2053,7 +2087,8 @@ function initAjustesView() {
     if (btnCrearBackup) {
         btnCrearBackup.addEventListener('click', async () => {
             try {
-                const r = await fetch('/api/backup/create', { method: 'POST' });
+                // Modo ligero: evita mysqldump y usa JSON
+                const r = await fetch('/api/backup/create?mode=lite', { method: 'POST' });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const j = await r.json();
                 alert('Backup creado: ' + j.file);
@@ -2178,10 +2213,7 @@ function initReportesView() {
     const btnGenerarReporte = document.getElementById('btn-generar-reporte');
     const btnExportarPDF = document.getElementById('btn-exportar-pdf');
     const btnExportarExcel = document.getElementById('btn-exportar-excel');
-    const btnFiltrosAvanzados = document.getElementById('btn-filtros-avanzados');
-    const panelFiltrosAvanzados = document.getElementById('panel-filtros-avanzados');
-    const btnAplicarFiltros = document.getElementById('btn-aplicar-filtros');
-    const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros');
+    // Filtros avanzados eliminados
     const rangoFecha = document.getElementById('rango-fecha');
     const fechasPersonalizadas = document.getElementById('fechas-personalizadas');
     const fechasPersonalizadasHasta = document.getElementById('fechas-personalizadas-hasta');
@@ -2205,23 +2237,9 @@ function initReportesView() {
         btnExportarExcel.addEventListener('click', exportarExcel);
     }
     
-    if (btnFiltrosAvanzados && panelFiltrosAvanzados) {
-        btnFiltrosAvanzados.addEventListener('click', () => {
-            const isVisible = panelFiltrosAvanzados.style.display === 'block';
-            panelFiltrosAvanzados.style.display = isVisible ? 'none' : 'block';
-            btnFiltrosAvanzados.innerHTML = isVisible ? 
-                '<i class="fas fa-filter"></i> Filtros Avanzados' : 
-                '<i class="fas fa-times"></i> Ocultar Filtros';
-        });
-    }
+    // Sin panel de filtros avanzados
     
-    if (btnAplicarFiltros) {
-        btnAplicarFiltros.addEventListener('click', aplicarFiltrosAvanzados);
-    }
-    
-    if (btnLimpiarFiltros) {
-        btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
-    }
+    // Listeners de filtros avanzados removidos
     
     if (rangoFecha && fechasPersonalizadas && fechasPersonalizadasHasta) {
         rangoFecha.addEventListener('change', function() {
@@ -2416,39 +2434,7 @@ function initReportesView() {
         alert('Funcionalidad de exportación a Excel en desarrollo');
     }
     
-    function aplicarFiltrosAvanzados() {
-        console.log('Aplicando filtros avanzados...');
-        
-        // Obtener valores de los filtros
-        const empleado = document.getElementById('filtro-empleado').value;
-        const mesa = document.getElementById('filtro-mesa').value;
-        const producto = document.getElementById('filtro-producto').value;
-        const categoria = document.getElementById('filtro-categoria').value;
-        
-        console.log('Filtros aplicados:', { empleado, mesa, producto, categoria });
-        
-        // Regenerar reporte con los filtros aplicados
-        generarReporte();
-        
-        // Cerrar panel de filtros
-        if (panelFiltrosAvanzados) panelFiltrosAvanzados.style.display = 'none';
-        if (btnFiltrosAvanzados) {
-            btnFiltrosAvanzados.innerHTML = '<i class="fas fa-filter"></i> Filtros Avanzados';
-        }
-    }
-    
-    function limpiarFiltros() {
-        console.log('Limpiando filtros...');
-        
-        // Restablecer valores de los filtros
-        document.getElementById('filtro-empleado').value = '';
-        document.getElementById('filtro-mesa').value = '';
-        document.getElementById('filtro-producto').value = '';
-        document.getElementById('filtro-categoria').value = '';
-        
-        // Regenerar reporte sin filtros
-        generarReporte();
-    }
+    // Funciones de filtros avanzados removidas
     
     function cambiarTipoGrafico(tipo) {
         console.log('Cambiando tipo de gráfico a:', tipo);

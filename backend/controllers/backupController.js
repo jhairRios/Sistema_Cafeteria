@@ -111,21 +111,27 @@ async function createJsonFallback(ts) {
   return fname;
 }
 
-exports.createNow = async (_req, res) => {
+exports.createNow = async (req, res) => {
   try {
     ensureDir();
     const ts = new Date().toISOString().replace(/[:.]/g,'-');
     const sqlName = `backup-${ts}.sql.gz`;
     const sqlFull = path.join(BACKUP_DIR, sqlName);
     let fileMade = null;
-    try {
-      await runMysqldump(sqlFull);
-      const sha = await computeChecksum(sqlFull);
-      try { fs.writeFileSync(sqlFull + '.sha256', sha + '  ' + sqlName + '\n'); } catch {}
-      fileMade = sqlName;
-    } catch (e) {
-      console.warn('mysqldump no disponible, usando fallback JSON:', e && e.message);
+    const mode = String((req.query?.mode || req.body?.mode || '')).toLowerCase();
+    if (mode === 'lite') {
+      // Forzar backup ligero (JSON) sin intentar mysqldump
       fileMade = await createJsonFallback(ts);
+    } else {
+      try {
+        await runMysqldump(sqlFull);
+        const sha = await computeChecksum(sqlFull);
+        try { fs.writeFileSync(sqlFull + '.sha256', sha + '  ' + sqlName + '\n'); } catch {}
+        fileMade = sqlName;
+      } catch (e) {
+        console.warn('mysqldump no disponible, usando fallback JSON:', e && e.message);
+        fileMade = await createJsonFallback(ts);
+      }
     }
     const { keepLast } = readScheduleCfg();
     rotateBackups(keepLast);

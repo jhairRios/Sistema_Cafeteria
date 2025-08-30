@@ -11,6 +11,7 @@ INSERT INTO permisos (clave, nombre, tipo, descripcion) VALUES
 ('action.productos.delete','Eliminar Producto','accion','Puede eliminar productos'),
 ('action.mesas.ocupar','Ocupar mesa','accion','Puede ocupar mesas'),
 ('action.mesas.cerrar','Cerrar mesa','accion','Puede cerrar mesas'),
+('action.mesas.delete','Eliminar mesa','accion','Puede eliminar mesas'),
 ('action.reportes.generar','Generar reportes','accion','Puede generar reportes'),
 ('action.reportes.export.pdf','Exportar PDF','accion','Puede exportar reportes a PDF'),
 ('action.reportes.export.excel','Exportar Excel','accion','Puede exportar reportes a Excel'),
@@ -40,5 +41,11 @@ INSERT IGNORE INTO roles_permisos (role_id, permiso_id)
 SELECT 4, p.id FROM permisos p WHERE p.clave IN (
   'action.reportes.generar','action.reportes.export.pdf','action.reportes.export.excel','action.reportes.filtros',
   'action.ventas.agregar','action.ventas.limpiar','action.ventas.cancelar','action.ventas.procesar',
-  'action.mesas.ocupar','action.mesas.cerrar'
+  'action.mesas.ocupar','action.mesas.cerrar','action.mesas.delete'
+);
+
+-- Admin (1): incluir eliminar mesa explícitamente
+INSERT IGNORE INTO roles_permisos (role_id, permiso_id)
+SELECT 1, p.id FROM permisos p WHERE p.clave IN (
+  'action.mesas.delete'
 );

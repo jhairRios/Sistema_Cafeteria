@@ -2,6 +2,7 @@
 // Punto de entrada del frontend (ES Modules)
 
 import { loadViewHtml, enhanceAllSelects } from './core/dom.js';
+import { connectSockets } from './core/sockets.js';
 
 // Estado global mínimo
 const state = {
@@ -34,8 +35,16 @@ function setupUserDropdown() {
   if (cerrarSesionBtn) {
     cerrarSesionBtn.onclick = function () {
       try {
+        const userName = sessionStorage.getItem('nombreUsuario');
+        const sessionId = sessionStorage.getItem('sessionId');
+        const userId = sessionStorage.getItem('userId');
+        fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ userId, sessionId }) }).catch(() => {});
+      } catch(_) {}
+      try {
         sessionStorage.removeItem('logueado');
         sessionStorage.removeItem('nombreUsuario');
+        sessionStorage.removeItem('sessionId');
+        sessionStorage.removeItem('userId');
         localStorage.setItem('forceLogout', Date.now().toString());
         setTimeout(() => localStorage.removeItem('forceLogout'), 0);
       } catch (_) {}
@@ -216,6 +225,8 @@ async function loadView(viewName) {
 
 window.addEventListener('DOMContentLoaded', () => {
   setUserHeader();
+  // Conectar sockets si hay sesión
+  try { if (sessionStorage.getItem('logueado') === '1') connectSockets(); } catch {}
   setupUserDropdown();
   setupSidebar();
   setupNavigation();
